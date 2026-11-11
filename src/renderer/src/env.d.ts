@@ -1,5 +1,6 @@
 import type { DetailedHTMLProps, HTMLAttributes } from 'react'
 import type { MathfieldElement } from 'mathlive'
+import type { FileFilter } from './files'
 
 declare global {
   namespace JSX {
@@ -8,6 +9,15 @@ declare global {
     }
   }
   interface Window {
-    vivian: { platform: string }
+    vivian?: {
+      platform: string
+      saveFile(args: {
+        defaultName: string
+        data: string | Uint8Array
+        filter: FileFilter
+        path?: string
+      }): Promise<string | null>
+      openFile(args: { filter: FileFilter }): Promise<{ path: string; content: string } | null>
+    }
   }
 }
