@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import App from './App'
 import Shapes3D from './shapes3d/Shapes3D'
 import Graphs from './graphs/Graphs'
@@ -16,6 +16,10 @@ const VIEWS: { id: View; name: string }[] = [
 /** Khung ngoài: chuyển giữa các phần. Các phần luôn được giữ để không mất nội dung đang soạn. */
 export default function Shell(): JSX.Element {
   const [view, setView] = useState<View>('editor')
+  // Word gửi công thức tới: chuyển về phần soạn công thức.
+  useEffect(() => {
+    window.vivian?.onWordSession?.((session) => session && setView('editor'))
+  }, [])
   return (
     <>
       <nav className="views">

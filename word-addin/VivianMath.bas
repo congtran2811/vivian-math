@@ -252,7 +252,17 @@ End Sub
 Private Function RunEditor(ByVal latexIn As String, ByVal fontSize As Single, ByRef latexOut As String, _
                            ByRef png As String, ByRef w As Single, ByRef h As Single, ByRef depth As Single) As Boolean
     Dim folder As String, parts() As String, started As Date
+    Static busy As Boolean
     RunEditor = False
+
+    ' A button was clicked while an equation is still being edited:
+    ' bring the open editor to the front instead of starting another one.
+    If busy Then
+        On Error Resume Next
+        AppActivate "Vivian Math"
+        On Error GoTo 0
+        Exit Function
+    End If
 
     folder = Environ$("TEMP") & "\VivianMath"
     If Dir$(folder, vbDirectory) = "" Then MkDir folder
@@ -272,6 +282,7 @@ Private Function RunEditor(ByVal latexIn As String, ByVal fontSize As Single, By
     End If
     On Error GoTo 0
 
+    busy = True
     started = Now
     Do
         DoEvents
@@ -279,10 +290,17 @@ Private Function RunEditor(ByVal latexIn As String, ByVal fontSize As Single, By
         If Dir$(folder & "\done.flag") <> "" Then Exit Do
         If Dir$(folder & "\cancel.flag") <> "" Then
             CleanFolder folder
+            busy = False
+            Application.Activate
             Exit Function
         End If
-        If DateDiff("s", started, Now) > WAIT_SECONDS Then Exit Function
+        If DateDiff("s", started, Now) > WAIT_SECONDS Then
+            busy = False
+            Exit Function
+        End If
     Loop
+    busy = False
+    Application.Activate
 
     latexOut = ReadUtf8(folder & "\result.txt")
     png = folder & "\result.png"

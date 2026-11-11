@@ -7,6 +7,9 @@ contextBridge.exposeInMainWorld('vivian', {
   openFile: (args: unknown) => ipcRenderer.invoke('file:open', args),
   wordSession: () => ipcRenderer.invoke('word:session'),
   wordFinish: (args: unknown) => ipcRenderer.invoke('word:finish', args),
+  onWordSession: (cb: (session: unknown) => void) => {
+    ipcRenderer.on('word:session', (_event, session) => cb(session))
+  },
   wordCancel: () => ipcRenderer.invoke('word:cancel'),
   installWordAddin: () => ipcRenderer.invoke('word:installAddin')
 })

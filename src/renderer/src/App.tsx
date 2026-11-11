@@ -186,14 +186,30 @@ export default function App(): JSX.Element {
     say('Đã dán công thức từ Word')
   }
 
-  // Hỏi xem có phải Word vừa mở phần mềm không, nếu có thì nạp công thức cần sửa.
+  // Word mở phần mềm, hoặc gửi công thức mới cho cửa sổ đang mở: nạp công thức cần sửa.
+  // Nội dung đang soạn dở được cất đi và trả lại khi xong việc với Word.
+  const stashRef = useRef<{ latex: string; dirty: boolean } | null>(null)
+  const dirtyRef = useRef(false)
+  dirtyRef.current = dirty
+  const inWordRef = useRef(false)
   useEffect(() => {
-    void window.vivian?.wordSession?.().then((session) => {
-      if (!session) return
-      setWord({ fontSize: session.fontSize })
-      setFormula(session.latex, false)
-      fieldRef.current?.focus()
-    })
+    const apply = (session: { latex: string; fontSize: number } | null): void => {
+      if (session) {
+        if (!inWordRef.current) stashRef.current = { latex: fieldRef.current?.value ?? '', dirty: dirtyRef.current }
+        inWordRef.current = true
+        setWord({ fontSize: session.fontSize })
+        setFormula(session.latex, false)
+        fieldRef.current?.focus()
+      } else if (inWordRef.current) {
+        inWordRef.current = false
+        setWord(null)
+        const stash = stashRef.current
+        stashRef.current = null
+        setFormula(stash?.latex ?? '', stash?.dirty ?? false)
+      }
+    }
+    void window.vivian?.wordSession?.().then((session) => session && apply(session))
+    window.vivian?.onWordSession?.(apply)
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 

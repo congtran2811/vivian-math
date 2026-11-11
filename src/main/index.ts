@@ -7,10 +7,27 @@ import { join, resolve } from 'path'
 // Khi Word gọi phần mềm để soạn một công thức, nó truyền thư mục trao đổi qua tham số này.
 // Word ghi latex.txt và fontsize.txt vào đó; phần mềm ghi lại result.png, result.txt, size.txt rồi done.flag.
 const SESSION_FLAG = '--word-session='
-const sessionArg = process.argv.find((a) => a.startsWith(SESSION_FLAG))
-const sessionPath = sessionArg ? resolve(sessionArg.slice(SESSION_FLAG.length)) : null
-const wordDir = sessionPath && existsSync(sessionPath) && statSync(sessionPath).isDirectory() ? sessionPath : null
-let wordDone = false
+const sessionFromArgs = (argv: string[]): string | null => {
+  const arg = argv.find((a) => a.startsWith(SESSION_FLAG))
+  const path = arg ? resolve(arg.slice(SESSION_FLAG.length)) : null
+  return path && existsSync(path) && statSync(path).isDirectory() ? path : null
+}
+// Thư mục trao đổi của công thức đang soạn cho Word; null khi không có.
+let wordDir: string | null = sessionFromArgs(process.argv)
+let mainWindow: BrowserWindow | null = null
+
+const windowTitle = (): string => (wordDir ? 'Vivian Math (Word)' : 'Vivian Math')
+
+// Báo cho Word biết công thức đang soạn bị bỏ, để nó thôi chờ.
+function cancelWordSession(): void {
+  if (!wordDir) return
+  try {
+    writeFileSync(join(wordDir, 'cancel.flag'), '')
+  } catch {
+    // Thư mục trao đổi đã bị xóa: Word sẽ tự hết thời gian chờ.
+  }
+  wordDir = null
+}
 
 const readText = async (file: string): Promise<string> => {
   try {
@@ -25,13 +42,20 @@ function createWindow(): void {
   const win = new BrowserWindow({
     width: 1100,
     height: 720,
-    title: wordDir ? 'Vivian Math (Word)' : 'Vivian Math',
+    title: windowTitle(),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
       nodeIntegration: false
     }
   })
+
+  mainWindow = win
+  win.on('closed', () => {
+    if (mainWindow === win) mainWindow = null
+  })
+  // Giữ tên cửa sổ do phần mềm đặt, không lấy theo thẻ <title> của trang.
+  win.on('page-title-updated', (e) => e.preventDefault())
 
   // Mở liên kết ngoài bằng trình duyệt mặc định, không mở trong app.
   win.webContents.setWindowOpenHandler(({ url }) => {
@@ -44,6 +68,38 @@ function createWindow(): void {
   } else {
     win.loadFile(join(__dirname, '../renderer/index.html'))
   }
+}
+
+async function readSession(): Promise<{ latex: string; fontSize: number } | null> {
+  if (!wordDir) return null
+  const fontSize = parseFloat(await readText(join(wordDir, 'fontsize.txt')))
+  return {
+    latex: (await readText(join(wordDir, 'latex.txt'))).trim(),
+    fontSize: fontSize >= 6 && fontSize <= 96 ? fontSize : 12
+  }
+}
+
+// Đưa cửa sổ đang mở lên trước thay vì mở thêm một phần mềm nữa.
+function showWindow(): void {
+  if (!mainWindow) {
+    createWindow()
+    return
+  }
+  if (mainWindow.isMinimized()) mainWindow.restore()
+  mainWindow.show()
+  // Windows hay chặn việc tự giành tiêu điểm; bật tắt "luôn ở trên" để cửa sổ chắc chắn nổi lên.
+  mainWindow.setAlwaysOnTop(true)
+  mainWindow.focus()
+  mainWindow.setAlwaysOnTop(false)
+}
+
+// Kết thúc công thức đang soạn cho Word: phần mềm vẫn mở, thu nhỏ lại để lần sau dùng tiếp.
+async function endWordSession(): Promise<void> {
+  wordDir = null
+  if (!mainWindow) return
+  mainWindow.setTitle(windowTitle())
+  mainWindow.webContents.send('word:session', null)
+  mainWindow.minimize()
 }
 
 interface FileFilter {
@@ -88,14 +144,7 @@ function registerFileHandlers(): void {
 }
 
 function registerWordHandlers(): void {
-  ipcMain.handle('word:session', async (): Promise<{ latex: string; fontSize: number } | null> => {
-    if (!wordDir) return null
-    const fontSize = parseFloat(await readText(join(wordDir, 'fontsize.txt')))
-    return {
-      latex: (await readText(join(wordDir, 'latex.txt'))).trim(),
-      fontSize: fontSize >= 6 && fontSize <= 96 ? fontSize : 12
-    }
-  })
+  ipcMain.handle('word:session', readSession)
 
   ipcMain.handle(
     'word:finish',
@@ -107,12 +156,14 @@ function registerWordHandlers(): void {
       await writeFile(join(wordDir, 'size.txt'), [a.width, a.height, a.depth].map((n) => n.toFixed(2)).join(';'))
       // done.flag ghi sau cùng: Word chỉ đọc kết quả khi thấy file này.
       await writeFile(join(wordDir, 'done.flag'), '')
-      wordDone = true
-      app.quit()
+      await endWordSession()
     }
   )
 
-  ipcMain.handle('word:cancel', (): void => app.quit())
+  ipcMain.handle('word:cancel', async (): Promise<void> => {
+    cancelWordSession()
+    await endWordSession()
+  })
 
   // Cài bộ nút Vivian Math vào Word bằng script đi kèm. Script trả về mã ngắn, giao diện tự dịch ra lời.
   ipcMain.handle('word:installAddin', (): Promise<string> => {
@@ -131,17 +182,32 @@ function registerWordHandlers(): void {
 }
 
 // Nếu người dùng đóng cửa sổ mà không chèn, báo cho Word biết để nó thôi chờ.
-app.on('will-quit', () => {
-  if (wordDir && !wordDone) {
-    try {
-      writeFileSync(join(wordDir, 'cancel.flag'), '')
-    } catch {
-      // Thư mục trao đổi đã bị xóa: Word sẽ tự hết thời gian chờ.
-    }
+app.on('will-quit', cancelWordSession)
+
+// Chỉ chạy một phần mềm: lần mở sau (ví dụ Word bấm nút lần nữa) chuyển yêu cầu cho cửa sổ đang mở rồi thoát.
+const isFirstInstance = app.requestSingleInstanceLock()
+if (!isFirstInstance) {
+  wordDir = null
+  app.quit()
+}
+
+app.on('second-instance', (_event, argv) => {
+  const next = sessionFromArgs(argv)
+  if (next && next !== wordDir) {
+    cancelWordSession()
+    wordDir = next
   }
+  showWindow()
+  if (!next || !mainWindow) return
+  mainWindow.setTitle(windowTitle())
+  const win = mainWindow
+  const send = (): void => void readSession().then((session) => win.webContents.send('word:session', session))
+  // Cửa sổ vừa tạo lại sẽ tự hỏi 'word:session' khi nạp xong.
+  if (!win.webContents.isLoading()) send()
 })
 
 app.whenReady().then(() => {
+  if (!isFirstInstance) return
   registerFileHandlers()
   registerWordHandlers()
   createWindow()
@@ -151,5 +217,5 @@ app.whenReady().then(() => {
 })
 
 app.on('window-all-closed', () => {
-  if (process.platform !== 'darwin' || wordDir) app.quit()
+  if (process.platform !== 'darwin') app.quit()
 })
