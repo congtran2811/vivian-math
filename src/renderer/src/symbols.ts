@@ -201,6 +201,28 @@ export const GROUPS: PaletteGroup[] = [
     ]
   },
   {
+    name: 'Hóa học',
+    wide: true,
+    items: [
+      sym('\\ce{H2O}', 'Nước'),
+      sym('\\ce{CO2}', 'Cacbon đioxit'),
+      sym('\\ce{H2SO4}', 'Axit sunfuric'),
+      sym('\\ce{NaOH}', 'Natri hiđroxit'),
+      sym('\\ce{Ca(OH)2}', 'Canxi hiđroxit'),
+      sym('\\ce{Fe^3+}', 'Ion dương'),
+      sym('\\ce{SO4^2-}', 'Ion âm'),
+      sym('\\ce{A + B -> C}', 'Phương trình phản ứng'),
+      sym('\\ce{A + B ->[t^o] C}', 'Phản ứng có nhiệt độ'),
+      sym('\\ce{A + B ->[t^o][xt] C}', 'Phản ứng có nhiệt độ và xúc tác'),
+      sym('\\ce{A + B <=> C}', 'Phản ứng thuận nghịch'),
+      sym('\\ce{2H2 + O2 ->[t^o] 2H2O}', 'Ví dụ: đốt hiđro'),
+      sym('\\ce{Zn + 2HCl -> ZnCl2 + H2 ^}', 'Chất khí bay lên'),
+      sym('\\ce{BaCl2 + H2SO4 -> BaSO4 v + 2HCl}', 'Chất kết tủa'),
+      sym('\\ce{CaCO3 ->[t^o] CaO + CO2 ^}', 'Ví dụ: nung đá vôi'),
+      sym('\\ce{^{12}_{6}C}', 'Kí hiệu nguyên tử')
+    ]
+  },
+  {
     name: 'Công thức THCS',
     wide: true,
     items: [

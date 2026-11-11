@@ -20,8 +20,10 @@ Nền tảng: Windows trước, sau đó macOS (cùng một mã nguồn Electron
 - [x] Ma trận (thêm, xóa hàng và cột), biến đổi nhiều dòng thẳng hàng
 - [x] Dấu trên chữ, đóng khung, gạch bỏ, kiểu chữ (đậm, đứng, lời văn)
 - [x] Tô màu từng phần công thức, phóng to và thu nhỏ vùng soạn
-- [ ] Dán MathML từ Word để sửa lại
-- [ ] Công thức hóa học
+- [x] Dán công thức từ Word (MathML) để sửa lại
+- [x] Công thức và phương trình hóa học
+- [ ] Add-in cho Word: nút chèn và đánh số công thức
+- [ ] Nhập bằng chữ viết tay
 - [ ] Giao diện tiếng Việt và tiếng Anh
 
 ## Bước 3: hình 3D và video giải thích

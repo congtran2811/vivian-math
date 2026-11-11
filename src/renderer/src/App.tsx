@@ -4,6 +4,7 @@ import { GROUPS } from './symbols'
 import { latexToPng, latexToSvg } from './exportImage'
 import { VMATH_FILTER, openFile, parse, saveFile, serialize } from './files'
 import { loadList, saveList } from './storage'
+import { clipboardToLatex, hasMathML } from './wordPaste'
 
 const START = 'x=\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}'
 const FONT_SIZES = [16, 20, 24, 32, 48, 64]
@@ -56,7 +57,8 @@ export default function App(): JSX.Element {
 
   const say = (text: string, error = false): void => {
     setStatus({ text, error })
-    setTimeout(() => setStatus((s) => (s?.text === text ? null : s)), 3000)
+    // Thông báo lỗi thường dài hơn nên giữ lâu hơn.
+    setTimeout(() => setStatus((s) => (s?.text === text ? null : s)), error ? 9000 : 3000)
   }
 
   /** Chạy một thao tác và báo lỗi bằng tiếng Việt thay vì im lặng. */
@@ -100,11 +102,26 @@ export default function App(): JSX.Element {
       e.stopPropagation()
       insert(hit.insert)
     }
+    // Dán công thức sao chép từ Word (MathML): đổi sang LaTeX rồi chèn tại con trỏ.
+    const onPaste = (e: ClipboardEvent): void => {
+      const text = e.clipboardData?.getData('text/plain') ?? ''
+      if (!hasMathML(text)) return
+      e.preventDefault()
+      e.stopPropagation()
+      try {
+        insert(clipboardToLatex(text))
+        say('Đã dán công thức từ Word')
+      } catch (err) {
+        say(err instanceof Error ? err.message : String(err), true)
+      }
+    }
     field.addEventListener('input', onInput)
     field.addEventListener('keydown', onKey, { capture: true })
+    field.addEventListener('paste', onPaste, { capture: true })
     return () => {
       field.removeEventListener('input', onInput)
       field.removeEventListener('keydown', onKey, { capture: true })
+      field.removeEventListener('paste', onPaste, { capture: true })
     }
     // Chỉ gắn một lần: insert chỉ dùng ref và các hàm setState ổn định.
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -157,6 +174,14 @@ export default function App(): JSX.Element {
     field.focus()
     setLatex(field.value)
     setDirty(true)
+  }
+
+  const onPasteFromWord = async (): Promise<void> => {
+    const converted = clipboardToLatex(await navigator.clipboard.readText())
+    if (!confirmDiscard()) return
+    setFormula(converted, true)
+    fieldRef.current?.focus()
+    say('Đã dán công thức từ Word')
   }
 
   const confirmDiscard = (): boolean =>
@@ -275,6 +300,7 @@ export default function App(): JSX.Element {
         <button onClick={run(() => onSave(false))} title="Ctrl+S">Lưu</button>
         <button onClick={run(() => onSave(true))} title="Ctrl+Shift+S">Lưu thành</button>
         <span className="sep" />
+        <button onClick={run(onPasteFromWord)} title="Sao chép công thức trong Word (Ctrl+C) rồi bấm nút này">Dán từ Word</button>
         <button onClick={() => command('undo')} title="Ctrl+Z">Hoàn tác</button>
         <button onClick={() => command('redo')} title="Ctrl+Y">Làm lại</button>
         <span className="sep" />
