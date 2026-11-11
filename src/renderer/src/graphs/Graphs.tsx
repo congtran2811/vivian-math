@@ -1,7 +1,8 @@
 import { useMemo, useRef, useState } from 'react'
 import { Tex, vn } from '../Tex'
 import { num } from '../shapes3d/shapes'
-import { savePng, saveSvg } from '../svgExport'
+import { savePng, saveSvg, svgToPng } from '../svgExport'
+import { WordFigureBanner, insertImageIntoWord } from '../WordInsert'
 
 type Kind = 'linear' | 'quadratic' | 'inverse'
 
@@ -83,7 +84,7 @@ function intersections(f: Fn, g: Fn): { x: number; y: number }[] {
   return xs.map((x) => ({ x, y: line.a * x + line.b }))
 }
 
-export default function Graphs(): JSX.Element {
+export default function Graphs({ word }: { word: boolean }): JSX.Element {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const nextId = useRef(3)
   const [fns, setFns] = useState<Fn[]>([
@@ -152,6 +153,11 @@ export default function Graphs(): JSX.Element {
     }
   }
 
+  const insertIntoWord = async (): Promise<void> => {
+    const { blob, width, height } = await svgToPng(svgRef.current!, 3)
+    await insertImageIntoWord(blob, width, height, 280)
+  }
+
   const tick = range > 10 ? 2 : 1
   const ticks: number[] = []
   for (let t = -Math.floor(range / tick) * tick; t <= range; t += tick) ticks.push(t)
@@ -207,6 +213,7 @@ export default function Graphs(): JSX.Element {
           Phạm vi trục: từ {-range} đến {range}
           <input type="range" min={3} max={20} value={range} onChange={(e) => setRange(Number(e.target.value))} />
         </label>
+        {word && <WordFigureBanner onInsert={insertIntoWord} />}
         <div className="shape-actions">
           <button onClick={() => void exportAs('png')}>Xuất ảnh PNG</button>
           <button onClick={() => void exportAs('svg')}>Xuất ảnh SVG</button>

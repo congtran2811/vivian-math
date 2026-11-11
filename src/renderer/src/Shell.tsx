@@ -17,8 +17,13 @@ const VIEWS: { id: View; name: string }[] = [
 export default function Shell(): JSX.Element {
   const [view, setView] = useState<View>('editor')
   // Word gửi công thức tới: chuyển về phần soạn công thức.
+  const [word, setWord] = useState(false)
   useEffect(() => {
-    window.vivian?.onWordSession?.((session) => session && setView('editor'))
+    void window.vivian?.wordSession?.().then((session) => setWord(!!session))
+    window.vivian?.onWordSession?.((session) => {
+      setWord(!!session)
+      if (session) setView('editor')
+    })
   }, [])
   return (
     <>
@@ -33,13 +38,13 @@ export default function Shell(): JSX.Element {
         <App />
       </div>
       <div hidden={view !== 'graphs'}>
-        <Graphs />
+        <Graphs word={word} />
       </div>
       <div hidden={view !== 'plane'}>
-        <Plane />
+        <Plane word={word} />
       </div>
       <div hidden={view !== 'shapes'}>
-        <Shapes3D active={view === 'shapes'} />
+        <Shapes3D active={view === 'shapes'} word={word} />
       </div>
     </>
   )

@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { latexToSvg } from '../exportImage'
 import { saveFile } from '../files'
+import { WordFigureBanner, insertImageIntoWord } from '../WordInsert'
 import { SHAPES, type Step } from './shapes'
 
 // Khung hình video 720p: hình 3D bên trái, lời giải bên phải.
@@ -50,7 +51,7 @@ function pickVideoFormat(): { mime: string; ext: string } {
   throw new Error('Máy này không hỗ trợ ghi video.')
 }
 
-export default function Shapes3D({ active }: { active: boolean }): JSX.Element {
+export default function Shapes3D({ active, word }: { active: boolean; word: boolean }): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [shapeId, setShapeId] = useState(SHAPES[0].id)
   const shape = SHAPES.find((s) => s.id === shapeId)!
@@ -236,6 +237,14 @@ export default function Shapes3D({ active }: { active: boolean }): JSX.Element {
     }
   }
 
+  const insertIntoWord = async (): Promise<void> => {
+    const canvas = canvasRef.current!
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Không tạo được ảnh.'))), 'image/png')
+    )
+    await insertImageIntoWord(blob, canvas.width, canvas.height, 400)
+  }
+
   const exportImage = (): void => {
     canvasRef.current!.toBlob(async (blob) => {
       if (!blob) return say('Không tạo được ảnh.', true)
@@ -286,6 +295,7 @@ export default function Shapes3D({ active }: { active: boolean }): JSX.Element {
           </button>
           <button onClick={exportImage} disabled={busy}>Xuất ảnh PNG</button>
         </div>
+        {word && <WordFigureBanner onInsert={insertIntoWord} disabled={busy} />}
         <p className="tip">Kéo chuột trên hình để xoay, lăn chuột để phóng to hoặc thu nhỏ.</p>
         {status && <p className={status.error ? 'status error' : 'status'}>{status.text}</p>}
       </aside>

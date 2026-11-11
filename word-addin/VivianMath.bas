@@ -17,6 +17,7 @@ Option Explicit
 '
 
 Private Const TAG As String = "VivianMath:"
+Private Const FIGURE_ALT As String = "Vivian Math figure"
 Private Const BAR_NAME As String = "Vivian Math"
 Private Const WAIT_SECONDS As Long = 3600
 
@@ -203,7 +204,13 @@ Private Sub InsertPicture(ByVal target As Range, ByVal png As String, ByVal late
     shp.LockAspectRatio = 0
     shp.Width = w
     shp.Height = h
-    shp.AlternativeText = TAG & latex
+    ' A figure (graph, plane figure, solid) comes back without LaTeX: it is a
+    ' plain picture, not an equation that Edit Equation can reopen.
+    If latex = "" Then
+        shp.AlternativeText = FIGURE_ALT
+    Else
+        shp.AlternativeText = TAG & latex
+    End If
     ' Lower the picture so the formula's baseline sits on the text line.
     shp.Range.Font.Position = -CLng(depth)
     shp.Range.Select

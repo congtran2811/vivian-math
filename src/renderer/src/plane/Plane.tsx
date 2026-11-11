@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { Tex } from '../Tex'
-import { savePng, saveSvg } from '../svgExport'
+import { savePng, saveSvg, svgToPng } from '../svgExport'
+import { WordFigureBanner, insertImageIntoWord } from '../WordInsert'
 import { FIGURES, type Drawing, type P } from './figures'
 
 const W = 640
@@ -101,7 +102,7 @@ function Figure({ drawing, svgRef }: { drawing: Drawing; svgRef: React.RefObject
   )
 }
 
-export default function Plane(): JSX.Element {
+export default function Plane({ word }: { word: boolean }): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null)
   const [figId, setFigId] = useState(FIGURES[0].id)
   const fig = FIGURES.find((f) => f.id === figId)!
@@ -111,6 +112,12 @@ export default function Plane(): JSX.Element {
   const params = values[figId]
   const [status, setStatus] = useState('')
   const result = useMemo(() => fig.build(params), [fig, params])
+
+  const insertIntoWord = async (): Promise<void> => {
+    if (!svgRef.current) return
+    const { blob, width, height } = await svgToPng(svgRef.current, 3)
+    await insertImageIntoWord(blob, width, height, 300)
+  }
 
   const exportAs = async (kind: 'png' | 'svg'): Promise<void> => {
     if (!svgRef.current) return
@@ -146,6 +153,7 @@ export default function Plane(): JSX.Element {
             />
           </label>
         ))}
+        {word && <WordFigureBanner onInsert={insertIntoWord} disabled={'error' in result} />}
         <div className="shape-actions">
           <button onClick={() => void exportAs('png')} disabled={'error' in result}>Xuất ảnh PNG</button>
           <button onClick={() => void exportAs('svg')} disabled={'error' in result}>Xuất ảnh SVG</button>
