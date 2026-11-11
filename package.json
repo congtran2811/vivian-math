@@ -22,7 +22,13 @@
     },
     "mac": {
       "target": "dmg"
-    }
+    },
+    "extraResources": [
+      {
+        "from": "word-addin",
+        "to": "word-addin"
+      }
+    ]
   },
   "dependencies": {
     "mathjax-full": "^3.2.1",

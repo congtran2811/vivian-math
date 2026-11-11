@@ -1,7 +1,8 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tex, vn } from '../Tex'
 import { num } from '../shapes3d/shapes'
-import { savePng, saveSvg } from '../svgExport'
+import { savePng, saveSvg, svgToPng } from '../svgExport'
+import { WordFigureBanner, insertImageIntoWord } from '../WordInsert'
 
 type Kind = 'linear' | 'quadratic' | 'inverse'
 
@@ -83,7 +84,7 @@ function intersections(f: Fn, g: Fn): { x: number; y: number }[] {
   return xs.map((x) => ({ x, y: line.a * x + line.b }))
 }
 
-export default function Graphs(): JSX.Element {
+export default function Graphs({ word, restore }: { word: boolean; restore?: unknown }): JSX.Element {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const nextId = useRef(3)
   const [fns, setFns] = useState<Fn[]>([
@@ -92,6 +93,19 @@ export default function Graphs(): JSX.Element {
   ])
   const [range, setRange] = useState(6)
   const [status, setStatus] = useState('')
+
+  // Word mở lại một đồ thị đã chèn: nạp lại các hàm số và phạm vi trục.
+  useEffect(() => {
+    const saved = restore as { fns?: Omit<Fn, 'id'>[]; range?: number } | undefined
+    if (!saved || !Array.isArray(saved.fns)) return
+    const list = saved.fns
+      .filter((f) => ['linear', 'quadratic', 'inverse'].includes(f.kind) && Number.isFinite(f.a) && Number.isFinite(f.b))
+      .slice(0, 4)
+      .map((f, i) => ({ id: i + 1, kind: f.kind, a: f.a, b: f.b, color: String(f.color) }))
+    nextId.current = list.length + 1
+    setFns(list)
+    if (Number.isFinite(saved.range)) setRange(Math.min(20, Math.max(3, saved.range!)))
+  }, [restore])
 
   // Đổi tọa độ toán học (trục y hướng lên) sang tọa độ màn hình.
   const unit = (SIZE - 2 * PAD) / (2 * range)
@@ -152,6 +166,14 @@ export default function Graphs(): JSX.Element {
     }
   }
 
+  const insertIntoWord = async (): Promise<void> => {
+    const { blob, width, height } = await svgToPng(svgRef.current!, 3)
+    await insertImageIntoWord(blob, width, height, 280, {
+      view: 'graphs',
+      state: { fns: fns.map(({ kind, a, b, color }) => ({ kind, a, b, color })), range }
+    })
+  }
+
   const tick = range > 10 ? 2 : 1
   const ticks: number[] = []
   for (let t = -Math.floor(range / tick) * tick; t <= range; t += tick) ticks.push(t)
@@ -207,6 +229,7 @@ export default function Graphs(): JSX.Element {
           Phạm vi trục: từ {-range} đến {range}
           <input type="range" min={3} max={20} value={range} onChange={(e) => setRange(Number(e.target.value))} />
         </label>
+        {word && <WordFigureBanner onInsert={insertIntoWord} />}
         <div className="shape-actions">
           <button onClick={() => void exportAs('png')}>Xuất ảnh PNG</button>
           <button onClick={() => void exportAs('svg')}>Xuất ảnh SVG</button>

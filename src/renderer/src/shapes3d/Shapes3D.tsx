@@ -3,6 +3,7 @@ import * as THREE from 'three'
 import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js'
 import { latexToSvg } from '../exportImage'
 import { saveFile } from '../files'
+import { WordFigureBanner, insertImageIntoWord } from '../WordInsert'
 import { SHAPES, type Step } from './shapes'
 
 // Khung hình video 720p: hình 3D bên trái, lời giải bên phải.
@@ -50,7 +51,7 @@ function pickVideoFormat(): { mime: string; ext: string } {
   throw new Error('Máy này không hỗ trợ ghi video.')
 }
 
-export default function Shapes3D({ active }: { active: boolean }): JSX.Element {
+export default function Shapes3D({ active, word, restore }: { active: boolean; word: boolean; restore?: unknown }): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [shapeId, setShapeId] = useState(SHAPES[0].id)
   const shape = SHAPES.find((s) => s.id === shapeId)!
@@ -236,6 +237,34 @@ export default function Shapes3D({ active }: { active: boolean }): JSX.Element {
     }
   }
 
+  // Word mở lại một hình đã chèn: chọn lại hình, kích thước và góc nhìn.
+  useEffect(() => {
+    const saved = restore as { shapeId?: string; params?: Record<string, number>; cam?: number[] } | undefined
+    const target = SHAPES.find((s) => s.id === saved?.shapeId)
+    if (!saved || !target) return
+    const t = three.current
+    if (t && Array.isArray(saved.cam) && saved.cam.length === 3 && saved.cam.every((n) => Number.isFinite(n))) {
+      // Chỉ cần đúng hướng nhìn: khoảng cách được tính lại khi dựng hình.
+      t.camera.position.copy(t.controls.target).add(new THREE.Vector3(saved.cam[0], saved.cam[1], saved.cam[2]))
+      t.controls.update()
+    }
+    setShapeId(target.id)
+    const next = Object.fromEntries(
+      target.params.map((p) => [p.key, Number.isFinite(saved.params?.[p.key]) ? saved.params![p.key] : p.value])
+    )
+    setValues((v) => ({ ...v, [target.id]: next }))
+  }, [restore])
+
+  const insertIntoWord = async (): Promise<void> => {
+    const canvas = canvasRef.current!
+    const blob = await new Promise<Blob>((resolve, reject) =>
+      canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Không tạo được ảnh.'))), 'image/png')
+    )
+    const t = three.current
+    const cam = t ? t.camera.position.clone().sub(t.controls.target).toArray() : undefined
+    await insertImageIntoWord(blob, canvas.width, canvas.height, 400, { view: 'shapes', state: { shapeId, params, cam } })
+  }
+
   const exportImage = (): void => {
     canvasRef.current!.toBlob(async (blob) => {
       if (!blob) return say('Không tạo được ảnh.', true)
@@ -286,6 +315,7 @@ export default function Shapes3D({ active }: { active: boolean }): JSX.Element {
           </button>
           <button onClick={exportImage} disabled={busy}>Xuất ảnh PNG</button>
         </div>
+        {word && <WordFigureBanner onInsert={insertIntoWord} disabled={busy} />}
         <p className="tip">Kéo chuột trên hình để xoay, lăn chuột để phóng to hoặc thu nhỏ.</p>
         {status && <p className={status.error ? 'status error' : 'status'}>{status.text}</p>}
       </aside>

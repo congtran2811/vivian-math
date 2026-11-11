@@ -1,6 +1,7 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tex } from '../Tex'
-import { savePng, saveSvg } from '../svgExport'
+import { savePng, saveSvg, svgToPng } from '../svgExport'
+import { WordFigureBanner, insertImageIntoWord } from '../WordInsert'
 import { FIGURES, type Drawing, type P } from './figures'
 
 const W = 640
@@ -101,7 +102,7 @@ function Figure({ drawing, svgRef }: { drawing: Drawing; svgRef: React.RefObject
   )
 }
 
-export default function Plane(): JSX.Element {
+export default function Plane({ word, restore }: { word: boolean; restore?: unknown }): JSX.Element {
   const svgRef = useRef<SVGSVGElement>(null)
   const [figId, setFigId] = useState(FIGURES[0].id)
   const fig = FIGURES.find((f) => f.id === figId)!
@@ -111,6 +112,24 @@ export default function Plane(): JSX.Element {
   const params = values[figId]
   const [status, setStatus] = useState('')
   const result = useMemo(() => fig.build(params), [fig, params])
+
+  // Word mở lại một hình đã chèn: chọn lại hình và các kích thước.
+  useEffect(() => {
+    const saved = restore as { figId?: string; params?: Record<string, number> } | undefined
+    const target = FIGURES.find((f) => f.id === saved?.figId)
+    if (!saved || !target) return
+    setFigId(target.id)
+    const next = Object.fromEntries(
+      target.params.map((p) => [p.key, Number.isFinite(saved.params?.[p.key]) ? saved.params![p.key] : p.value])
+    )
+    setValues((v) => ({ ...v, [target.id]: next }))
+  }, [restore])
+
+  const insertIntoWord = async (): Promise<void> => {
+    if (!svgRef.current) return
+    const { blob, width, height } = await svgToPng(svgRef.current, 3)
+    await insertImageIntoWord(blob, width, height, 300, { view: 'plane', state: { figId, params } })
+  }
 
   const exportAs = async (kind: 'png' | 'svg'): Promise<void> => {
     if (!svgRef.current) return
@@ -146,6 +165,7 @@ export default function Plane(): JSX.Element {
             />
           </label>
         ))}
+        {word && <WordFigureBanner onInsert={insertIntoWord} disabled={'error' in result} />}
         <div className="shape-actions">
           <button onClick={() => void exportAs('png')} disabled={'error' in result}>Xuất ảnh PNG</button>
           <button onClick={() => void exportAs('svg')} disabled={'error' in result}>Xuất ảnh SVG</button>

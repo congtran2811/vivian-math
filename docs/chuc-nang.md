@@ -22,7 +22,8 @@ Nền tảng: Windows trước, sau đó macOS (cùng một mã nguồn Electron
 - [x] Tô màu từng phần công thức, phóng to và thu nhỏ vùng soạn
 - [x] Dán công thức từ Word (MathML) để sửa lại
 - [x] Công thức và phương trình hóa học
-- [ ] Add-in cho Word: nút chèn và đánh số công thức
+- [x] Bộ nút trong Word (Word 2007 trở lên, Windows): chèn, chèn có đánh số, sửa lại công thức. Xem `word-addin/README.md`
+- [ ] Bộ nút trong Word cho macOS
 - [ ] Nhập bằng chữ viết tay
 - [ ] Giao diện tiếng Việt và tiếng Anh
 
@@ -40,4 +41,3 @@ Nền tảng: Windows trước, sau đó macOS (cùng một mã nguồn Electron
 
 - [ ] Bản cài Windows (.exe)
 - [ ] Bản cài macOS (.dmg)
-- [ ] Add-in cho Word (xem xét sau)

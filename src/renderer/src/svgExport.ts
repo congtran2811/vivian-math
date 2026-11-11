@@ -19,8 +19,8 @@ export async function saveSvg(svg: SVGSVGElement, name: string): Promise<string 
   })
 }
 
-/** Lưu hình vẽ thành PNG nền trắng, phóng to 2 lần cho nét. */
-export async function savePng(svg: SVGSVGElement, name: string, scale = 2): Promise<string | null> {
+/** Vẽ hình thành ảnh PNG nền trắng. Trả về ảnh cùng kích thước gốc của hình (chưa phóng). */
+export async function svgToPng(svg: SVGSVGElement, scale = 2): Promise<{ blob: Blob; width: number; height: number }> {
   const { text, width, height } = serialize(svg)
   const img = new Image()
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(text)
@@ -35,5 +35,11 @@ export async function savePng(svg: SVGSVGElement, name: string, scale = 2): Prom
   const blob = await new Promise<Blob>((resolve, reject) =>
     canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Không tạo được ảnh PNG.'))), 'image/png')
   )
+  return { blob, width, height }
+}
+
+/** Lưu hình vẽ thành PNG nền trắng, phóng to 2 lần cho nét. */
+export async function savePng(svg: SVGSVGElement, name: string, scale = 2): Promise<string | null> {
+  const { blob } = await svgToPng(svg, scale)
   return saveFile(`${name}.png`, new Uint8Array(await blob.arrayBuffer()), { name: 'Ảnh PNG', extensions: ['png'] })
 }
