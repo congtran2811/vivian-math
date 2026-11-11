@@ -1,11 +1,15 @@
 import { useState } from 'react'
 import App from './App'
 import Shapes3D from './shapes3d/Shapes3D'
+import Graphs from './graphs/Graphs'
+import Plane from './plane/Plane'
 
-type View = 'editor' | 'shapes'
+type View = 'editor' | 'graphs' | 'plane' | 'shapes'
 
 const VIEWS: { id: View; name: string }[] = [
   { id: 'editor', name: 'Công thức' },
+  { id: 'graphs', name: 'Đồ thị' },
+  { id: 'plane', name: 'Hình phẳng' },
   { id: 'shapes', name: 'Hình 3D' }
 ]
 
@@ -23,6 +27,12 @@ export default function Shell(): JSX.Element {
       </nav>
       <div hidden={view !== 'editor'}>
         <App />
+      </div>
+      <div hidden={view !== 'graphs'}>
+        <Graphs />
+      </div>
+      <div hidden={view !== 'plane'}>
+        <Plane />
       </div>
       <div hidden={view !== 'shapes'}>
         <Shapes3D active={view === 'shapes'} />
