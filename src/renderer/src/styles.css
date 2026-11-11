@@ -76,3 +76,8 @@ kbd { display: inline-block; min-width: 54px; padding: 1px 6px; border: 1px soli
 .word-banner span { margin-right: auto; font-weight: 600; }
 button.primary { background: #2b4eff; border-color: #2b4eff; color: #fff; font-weight: 600; }
 button.primary:hover { background: #1f3fe0; }
+
+/* Ô tìm ký hiệu */
+.symbol-search { margin-left: auto; align-self: center; width: 230px; padding: 5px 8px; font-size: 13px; border: 1px solid #d0d5dd; border-radius: 6px; }
+.palette.search-results { border-radius: 8px; }
+.palette .wide-item { grid-column: span 4; }

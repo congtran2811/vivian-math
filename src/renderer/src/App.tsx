@@ -46,6 +46,9 @@ export default function App(): JSX.Element {
   const fieldRef = useRef<MathfieldElement | null>(null)
   const [latex, setLatex] = useState(START)
   const [group, setGroup] = useState(0)
+  const [query, setQuery] = useState('')
+  const [whiteBg, setWhiteBg] = useState(false)
+  const [sharp, setSharp] = useState(2)
   const [filePath, setFilePath] = useState<string | null>(null)
   const [dirty, setDirty] = useState(false)
   const [fontSize, setFontSize] = useState(24)
@@ -288,11 +291,19 @@ export default function App(): JSX.Element {
     say(`Đã xuất ${baseName(saved)}`)
   }
 
-  const onExportPng = async (): Promise<void> => {
+  const imageOptions = (): { scale: number; background?: string } => ({
+    scale: sharp,
+    background: whiteBg ? '#ffffff' : undefined
+  })
+
+  const onExportPng = async (kind: 'png' | 'jpg' = 'png'): Promise<void> => {
     requireFormula()
-    const blob = await latexToPng(latex, { fontSize, color })
+    const blob = await latexToPng(latex, { fontSize, color }, {
+      ...imageOptions(),
+      type: kind === 'jpg' ? 'image/jpeg' : 'image/png'
+    })
     const bytes = new Uint8Array(await blob.arrayBuffer())
-    const saved = await saveFile(imageName('png'), bytes, { name: 'Ảnh PNG', extensions: ['png'] })
+    const saved = await saveFile(imageName(kind), bytes, { name: kind === 'jpg' ? 'Ảnh JPG' : 'Ảnh PNG', extensions: [kind] })
     if (!saved) return
     remember(latex)
     say(`Đã xuất ${baseName(saved)}`)
@@ -300,17 +311,19 @@ export default function App(): JSX.Element {
 
   const onCopyImage = async (): Promise<void> => {
     requireFormula()
-    const blob = await latexToPng(latex, { fontSize, color })
+    const blob = await latexToPng(latex, { fontSize, color }, imageOptions())
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
     remember(latex)
     say('Đã sao chép ảnh, dán vào Word hoặc PowerPoint bằng Ctrl+V')
   }
 
-  const onCopyText = async (kind: 'LaTeX' | 'MathML'): Promise<void> => {
+  const onCopyText = async (kind: 'LaTeX' | '$LaTeX$' | 'MathML'): Promise<void> => {
     const text =
       kind === 'LaTeX'
         ? latex
-        : `<math xmlns="http://www.w3.org/1998/Math/MathML">${convertLatexToMathMl(latex)}</math>`
+        : kind === '$LaTeX$'
+          ? `$${latex}$`
+          : `<math xmlns="http://www.w3.org/1998/Math/MathML">${convertLatexToMathMl(latex)}</math>`
     await navigator.clipboard.writeText(text)
     remember(latex)
     say(`Đã sao chép ${kind}`)
@@ -341,6 +354,20 @@ export default function App(): JSX.Element {
 
   // Vẽ sẵn nhãn các nút, chỉ tính một lần.
   const labels = useMemo(() => GROUPS.map((g) => g.items.map((it) => markup(it.show))), [])
+  // Tìm ký hiệu theo tên (không phân biệt dấu, hoa thường) hoặc theo lệnh LaTeX, trong mọi nhóm.
+  const found = useMemo(() => {
+    const plain = (s: string): string => s.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLowerCase()
+    const q = plain(query.trim())
+    if (!q) return null
+    const seen = new Set<string>()
+    return GROUPS.flatMap((g, gi) =>
+      g.items
+        .map((it, i) => ({ it, gi, i, group: g.name }))
+        .filter(({ it }) => plain(it.title).includes(q) || it.insert.toLowerCase().includes(q))
+    )
+      .filter(({ it }) => !seen.has(it.insert) && !!seen.add(it.insert))
+      .slice(0, 60)
+  }, [query])
   const favoriteLabels = useMemo(() => favorites.map(markup), [favorites])
   const recentLabels = useMemo(() => recent.map(markup), [recent])
 
@@ -391,7 +418,20 @@ export default function App(): JSX.Element {
             ))}
           </select>
         </label>
-        <button onClick={run(onExportPng)}>Xuất PNG</button>
+        <label title="Ảnh PNG và ảnh sao chép: nền trắng thay cho nền trong suốt">
+          <input type="checkbox" checked={whiteBg} onChange={(e) => setWhiteBg(e.target.checked)} />
+          Nền trắng
+        </label>
+        <label title="Độ nét của ảnh PNG, JPG và ảnh sao chép">
+          Độ nét
+          <select value={sharp} onChange={(e) => setSharp(Number(e.target.value))}>
+            <option value={1}>Thường</option>
+            <option value={2}>Nét</option>
+            <option value={4}>Rất nét (in ấn)</option>
+          </select>
+        </label>
+        <button onClick={run(() => onExportPng('png'))}>Xuất PNG</button>
+        <button onClick={run(() => onExportPng('jpg'))}>Xuất JPG</button>
         <button onClick={run(onExportSvg)}>Xuất SVG</button>
         <button onClick={run(onCopyImage)}>Sao chép ảnh</button>
         <span className="sep" />
@@ -431,9 +471,31 @@ export default function App(): JSX.Element {
         <button className={group === RECENT_TAB ? 'tab active' : 'tab'} onClick={() => setGroup(RECENT_TAB)}>
           Gần đây
         </button>
+        <input
+          className="symbol-search"
+          type="search"
+          placeholder="Tìm ký hiệu, ví dụ: căn, góc, sum"
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+        />
       </div>
 
-      {group < GROUPS.length && (
+      {found && (
+        <div className="palette search-results">
+          {found.length === 0 && <p className="empty">Không tìm thấy ký hiệu nào khớp với "{query.trim()}".</p>}
+          {found.map(({ it, gi, i, group: name }) => (
+            <button
+              key={`${gi}-${i}`}
+              className={GROUPS[gi].wide ? 'wide-item' : ''}
+              title={`${it.title} (nhóm ${name})`}
+              onClick={() => insert(it.insert)}
+              dangerouslySetInnerHTML={{ __html: labels[gi][i] }}
+            />
+          ))}
+        </div>
+      )}
+
+      {!found && group < GROUPS.length && (
         <div className={GROUPS[group].wide ? 'palette wide' : 'palette'}>
           {GROUPS[group].items.map((it, i) => (
             <button
@@ -452,7 +514,7 @@ export default function App(): JSX.Element {
         </div>
       )}
 
-      {group === FAVORITES_TAB && (
+      {!found && group === FAVORITES_TAB && (
         <div className="palette wide">
           {favorites.length === 0 && (
             <p className="empty">Chưa có công thức yêu thích. Soạn công thức rồi bấm "★ Yêu thích" để lưu lại dùng nhiều lần.</p>
@@ -468,7 +530,7 @@ export default function App(): JSX.Element {
         </div>
       )}
 
-      {group === RECENT_TAB && (
+      {!found && group === RECENT_TAB && (
         <div className="palette wide">
           {recent.length === 0 && (
             <p className="empty">Các công thức bạn lưu, xuất ảnh hoặc sao chép sẽ hiện ở đây.</p>
@@ -491,6 +553,7 @@ export default function App(): JSX.Element {
         <textarea value={latex} spellCheck={false} onChange={(e) => setFormula(e.target.value, true)} />
         <div className="actions">
           <button onClick={run(() => onCopyText('LaTeX'))}>Sao chép LaTeX</button>
+          <button onClick={run(() => onCopyText('$LaTeX$'))} title="Kèm dấu $ ở hai đầu, để dán vào tài liệu LaTeX, Overleaf hoặc Markdown">Sao chép $LaTeX$</button>
           <button onClick={run(() => onCopyText('MathML'))}>Sao chép MathML (dán vào Word)</button>
         </div>
       </section>

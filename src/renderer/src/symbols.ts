@@ -201,6 +201,66 @@ export const GROUPS: PaletteGroup[] = [
     ]
   },
   {
+    name: 'Ngoặc và nhãn',
+    items: [
+      tpl(`\\lfloor ${B}\\rfloor`, '\\left\\lfloor #?\\right\\rfloor', 'Phần nguyên (làm tròn xuống)'),
+      tpl(`\\lceil ${B}\\rceil`, '\\left\\lceil #?\\right\\rceil', 'Làm tròn lên'),
+      tpl(`\\langle ${B}\\rangle`, '\\left\\langle #?\\right\\rangle', 'Ngoặc góc'),
+      tpl(`\\|${B}\\|`, '\\left\\|#?\\right\\|', 'Chuẩn, độ dài'),
+      tpl(`\\left(${B};${B}\\right]`, '\\left(#?;#?\\right]', 'Nửa khoảng (a; b]'),
+      tpl(`\\left[${B};${B}\\right)`, '\\left[#?;#?\\right)', 'Nửa khoảng [a; b)'),
+      tpl(`\\left(${B};${B}\\right)`, '\\left(#?;#?\\right)', 'Khoảng hoặc tọa độ điểm'),
+      tpl(`\\left[${B};${B}\\right]`, '\\left[#?;#?\\right]', 'Đoạn [a; b]'),
+      tpl(`\\left.${B}\\right|_{${B}}`, '\\left.#?\\right|_{#?}', 'Gạch đứng bên phải có chỉ số'),
+      tpl(`\\binom{${B}}{${B}}`, '\\binom{#?}{#?}', 'Tổ hợp (ngoặc tròn)'),
+      tpl(`\\xrightarrow{${B}}`, '\\xrightarrow{#?}', 'Mũi tên phải có nhãn'),
+      tpl(`\\xleftarrow{${B}}`, '\\xleftarrow{#?}', 'Mũi tên trái có nhãn'),
+      tpl(`\\overset{${B}}{${B}}`, '\\overset{#?}{#@}', 'Ghi chú phía trên'),
+      tpl(`\\underset{${B}}{${B}}`, '\\underset{#?}{#@}', 'Ghi chú phía dưới'),
+      tpl(`\\overset{?}{=}`, '\\overset{?}{=}', 'Dấu bằng cần chứng minh'),
+      tpl(`${B}_{${B}}^{${B}}`, '#@_{#?}^{#?}', 'Chỉ số trên và dưới'),
+      tpl(`{}_{${B}}^{${B}}${B}`, '{}_{#?}^{#?}#?', 'Chỉ số phía trước')
+    ]
+  },
+  {
+    name: 'Tổng và giới hạn',
+    items: [
+      tpl(`\\sum_{${B}}^{${B}}`, '\\sum_{#?}^{#?}', 'Tổng có cận'),
+      tpl('\\sum', '\\sum_{#?}', 'Tổng'),
+      tpl(`\\prod_{${B}}^{${B}}`, '\\prod_{#?}^{#?}', 'Tích có cận'),
+      tpl(`\\lim_{${B}\\to ${B}}`, '\\lim_{#?\\to #?}', 'Giới hạn'),
+      tpl(`\\int_{${B}}^{${B}}`, '\\int_{#?}^{#?}#?\\,\\mathrm{d}x', 'Tích phân xác định'),
+      tpl('\\int', '\\int #?\\,\\mathrm{d}x', 'Nguyên hàm'),
+      tpl(`\\frac{\\mathrm{d}}{\\mathrm{d}x}`, '\\frac{\\mathrm{d}}{\\mathrm{d}x}#?', 'Đạo hàm theo x'),
+      tpl(`f'(x)`, "f'(x)", 'Đạo hàm f′(x)'),
+      tpl(`\\log_{${B}}${B}`, '\\log_{#?}#?', 'Lôgarit cơ số a'),
+      tpl(`\\ln ${B}`, '\\ln #?', 'Lôgarit tự nhiên'),
+      tpl(`${B}!`, '#@!', 'Giai thừa'),
+      tpl(`C_{${B}}^{${B}}`, 'C_{#?}^{#?}', 'Tổ hợp chập k của n'),
+      tpl(`A_{${B}}^{${B}}`, 'A_{#?}^{#?}', 'Chỉnh hợp chập k của n'),
+      tpl(`\\bigcup_{${B}}^{${B}}`, '\\bigcup_{#?}^{#?}', 'Hợp nhiều tập'),
+      tpl(`\\bigcap_{${B}}^{${B}}`, '\\bigcap_{#?}^{#?}', 'Giao nhiều tập'),
+      tpl(`\\max_{${B}}`, '\\max_{#?}', 'Giá trị lớn nhất'),
+      tpl(`\\min_{${B}}`, '\\min_{#?}', 'Giá trị nhỏ nhất')
+    ]
+  },
+  {
+    name: 'Khoảng cách',
+    items: [
+      tpl(`${B}\\,${B}`, '\\,', 'Khoảng cách hẹp'),
+      tpl(`${B}\\:${B}`, '\\:', 'Khoảng cách vừa'),
+      tpl(`${B}\;${B}`, '\;', 'Khoảng cách rộng'),
+      tpl(`${B}\\quad ${B}`, '\\quad ', 'Khoảng cách 1 em'),
+      tpl(`${B}\\qquad ${B}`, '\\qquad ', 'Khoảng cách 2 em'),
+      tpl(`${B}\\!${B}`, '\\!', 'Kéo sát lại'),
+      tpl(`\\displaystyle ${B}`, '\\displaystyle #@', 'Cỡ lớn (phân số, tổng đầy đủ)'),
+      tpl(`\\textstyle ${B}`, '\\textstyle #@', 'Cỡ trong dòng'),
+      tpl(`\\scriptstyle ${B}`, '\\scriptstyle #@', 'Cỡ chỉ số'),
+      tpl(`\\dfrac{${B}}{${B}}`, '\\dfrac{#?}{#?}', 'Phân số luôn cỡ lớn'),
+      tpl(`\\tfrac{${B}}{${B}}`, '\\tfrac{#?}{#?}', 'Phân số cỡ nhỏ')
+    ]
+  },
+  {
     name: 'Hóa học',
     wide: true,
     items: [

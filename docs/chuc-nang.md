@@ -22,7 +22,11 @@ Nền tảng: Windows trước, sau đó macOS (cùng một mã nguồn Electron
 - [x] Tô màu từng phần công thức, phóng to và thu nhỏ vùng soạn
 - [x] Dán công thức từ Word (MathML) để sửa lại
 - [x] Công thức và phương trình hóa học
-- [x] Bộ nút trong Word (Word 2007 trở lên, Windows): chèn, chèn có đánh số, sửa lại công thức. Xem `word-addin/README.md`
+- [x] Tìm ký hiệu theo tên trong mọi nhóm
+- [x] Nhóm ký hiệu: ngoặc và nhãn (phần nguyên, khoảng, mũi tên có nhãn), tổng, tích phân, giới hạn, khoảng cách và cỡ chữ toán
+- [x] Xuất ảnh JPG, chọn nền trắng hoặc trong suốt, chọn độ nét (1, 2, 4 lần)
+- [x] Sao chép LaTeX kèm dấu $ để dán vào tài liệu LaTeX, Markdown
+- [x] Bộ nút trong Word (Word 2007 trở lên, Windows): chèn, chèn có đánh số, sửa lại công thức; chèn và sửa lại đồ thị, hình phẳng, hình 3D. Xem `word-addin/README.md`
 - [ ] Bộ nút trong Word cho macOS
 - [ ] Nhập bằng chữ viết tay
 - [ ] Giao diện tiếng Việt và tiếng Anh
