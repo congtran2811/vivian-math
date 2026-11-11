@@ -24,8 +24,9 @@ Nền tảng: Windows trước, sau đó macOS (cùng một mã nguồn Electron
 
 - [ ] Đồ thị hàm số y = ax + b, y = ax² (lớp 8, 9)
 - [ ] Hình học phẳng: tam giác, đường tròn, góc nội tiếp
-- [ ] Hình không gian 3D xoay được: hình hộp, lăng trụ, hình chóp, hình trụ, hình nón, hình cầu (kèm công thức diện tích, thể tích)
-- [ ] Video giải bài từng bước, xuất MP4
+- [x] Hình không gian 3D xoay được: hình hộp, lập phương, lăng trụ, hình chóp, hình trụ, hình nón, hình cầu (kèm lời giải diện tích, thể tích theo kích thước tự chọn)
+- [x] Video giải thích từng bước cho hình không gian, xuất MP4 (720p)
+- [ ] Video giải bài cho đề bài bất kỳ
 - [ ] AI đọc đề bài, sinh lời giải và kịch bản minh họa
 
 ## Bước 4: đóng gói
