@@ -49,7 +49,12 @@ try {
 
     $startup = $word.StartupPath
     if (-not (Test-Path $startup)) { New-Item -ItemType Directory -Path $startup -Force | Out-Null }
-    $target = Join-Path $startup 'VivianMath.dotm'
+    # A plain string: Word's SaveAs rejects the PSObject wrapper Join-Path returns.
+    [string]$target = Join-Path $startup 'VivianMath.dotm'
+    # Word loads an older copy from STARTUP even when automated; unload it so the file can be replaced.
+    foreach ($addIn in @($word.AddIns)) {
+        if ($addIn.Name -eq 'VivianMath.dotm') { $addIn.Installed = $false }
+    }
     if (Test-Path $target) { Remove-Item -Path $target -Force }
 
     $doc = $word.Documents.Add()
@@ -67,7 +72,11 @@ catch {
 finally {
     if ($word) {
         try { $word.Quit([ref]0) } catch { }
-        [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($word)
+        try { [void][System.Runtime.InteropServices.Marshal]::ReleaseComObject($word) } catch { }
+        # Let Word finish shutting down before touching its settings again.
+        for ($i = 0; $i -lt 50 -and (Get-Process -Name WINWORD -ErrorAction SilentlyContinue); $i++) {
+            Start-Sleep -Milliseconds 200
+        }
     }
     if ($security) {
         if ($hadValue) { Set-ItemProperty -Path $security -Name 'AccessVBOM' -Value $oldValue -Type DWord }

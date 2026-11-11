@@ -139,9 +139,11 @@ Private Sub DoInsert(ByVal numbered As Boolean)
         target.Collapse 1
         InsertPicture target, png, latexOut, w, h, depth
     End If
+    CleanFolder SessionFolder(png)
     Exit Sub
 Failed:
     MsgBox T("MSG_ERROR") & Err.Description, vbExclamation, BAR_NAME
+    CleanFolder SessionFolder(png)
 End Sub
 
 ' Inserts the picture at the range and leaves the cursor right after it.
@@ -163,11 +165,17 @@ End Sub
 ' Display equation on its own line: centred, with "(n)" at the right margin.
 Private Sub InsertNumbered(ByVal target As Range, ByVal png As String, ByVal latex As String, _
                            ByVal w As Single, ByVal h As Single, ByVal depth As Single)
-    Dim usable As Single
+    Dim usable As Single, splitAfter As Boolean
     target.Select
     With Selection
         .Collapse 1
         If .Start > .Paragraphs(1).Range.Start Then .TypeParagraph
+        ' Text after the cursor moves to its own paragraph below the equation.
+        splitAfter = (.Start < .Paragraphs(1).Range.End - 1)
+        If splitAfter Then
+            .TypeParagraph
+            .MoveLeft 1, 1
+        End If
         usable = .PageSetup.PageWidth - .PageSetup.LeftMargin - .PageSetup.RightMargin
         With .ParagraphFormat
             .Alignment = 0
@@ -182,8 +190,12 @@ Private Sub InsertNumbered(ByVal target As Range, ByVal png As String, ByVal lat
         .MoveLeft 1, 1
         .Fields.Add Range:=.Range, Type:=-1, Text:="SEQ Equation \* ARABIC", PreserveFormatting:=False
         .EndKey 5
-        .TypeParagraph
-        .ParagraphFormat.TabStops.ClearAll
+        If splitAfter Then
+            .MoveRight 1, 1
+        Else
+            .TypeParagraph
+            .ParagraphFormat.TabStops.ClearAll
+        End If
     End With
 End Sub
 
@@ -216,7 +228,10 @@ Private Function RunEditor(ByVal latexIn As String, ByVal fontSize As Single, By
         DoEvents
         Sleep 150
         If Dir$(folder & "\done.flag") <> "" Then Exit Do
-        If Dir$(folder & "\cancel.flag") <> "" Then Exit Function
+        If Dir$(folder & "\cancel.flag") <> "" Then
+            CleanFolder folder
+            Exit Function
+        End If
         If DateDiff("s", started, Now) > WAIT_SECONDS Then Exit Function
     Loop
 
@@ -228,6 +243,21 @@ Private Function RunEditor(ByVal latexIn As String, ByVal fontSize As Single, By
     depth = Val(parts(2))
     RunEditor = (w > 0 And h > 0)
 End Function
+
+' Folder that holds a session's result.png ("" when no session finished).
+Private Function SessionFolder(ByVal png As String) As String
+    SessionFolder = ""
+    If InStrRev(png, "\") > 1 Then SessionFolder = Left$(png, InStrRev(png, "\") - 1)
+End Function
+
+' Removes a finished session folder from %TEMP%.
+Private Sub CleanFolder(ByVal folder As String)
+    If folder = "" Then Exit Sub
+    On Error Resume Next
+    Kill folder & "\*.*"
+    RmDir folder
+    On Error GoTo 0
+End Sub
 
 ' Command line that starts the app, saved by the installer. Falls back to the default install path.
 Private Function AppCommand() As String
@@ -243,7 +273,8 @@ Private Sub WriteUtf8(ByVal path As String, ByVal text As String)
     st.Type = 2
     st.Charset = "utf-8"
     st.Open
-    st.WriteText text
+    ' WriteText fails with error 3001 on an empty string.
+    If Len(text) > 0 Then st.WriteText text
     st.SaveToFile path, 2
     st.Close
 End Sub
