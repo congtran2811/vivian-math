@@ -1,5 +1,32 @@
-node_modules
-out
-dist
+# Thư viện cài bằng npm
+node_modules/
+
+# Kết quả build và bản cài đặt
+out/
+dist/
+release/
+*.tsbuildinfo
+
+# Log
 *.log
+npm-debug.log*
+
+# Biến môi trường và khóa bí mật
+.env
+.env.*
+!.env.example
+
+# Trình soạn code
+.vscode/*
+!.vscode/extensions.json
+.idea/
+
+# Hệ điều hành
 .DS_Store
+Thumbs.db
+desktop.ini
+
+# Tệp tạm
+*.tmp
+.cache/
+coverage/
