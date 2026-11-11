@@ -380,7 +380,7 @@ export default function App(): JSX.Element {
         <button onClick={addFavorite} title="Lưu công thức (hoặc phần đang bôi đen) để dùng lại">★ Yêu thích</button>
         <button onClick={() => setShowShortcuts((v) => !v)} className={showShortcuts ? 'on' : ''}>Phím tắt</button>
         {!word && (
-          <button onClick={run(onInstallWordAddin)} title="Thêm các nút Chèn công thức vào thẻ Add-Ins của Word">
+          <button onClick={run(onInstallWordAddin)} title="Thêm các nút Insert Equation vào thẻ Add-Ins của Word">
             Cài vào Word
           </button>
         )}

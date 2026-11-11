@@ -15,7 +15,6 @@ Option Explicit
 '   App writes   cancel.flag if the window is closed without inserting
 ' size.txt holds "width;height;depth" in points with a dot as decimal separator.
 '
-' VBA sources are ANSI, so Vietnamese text is stored as ChrW() codes in T().
 
 Private Const TAG As String = "VivianMath:"
 Private Const BAR_NAME As String = "Vivian Math"
@@ -27,24 +26,17 @@ Private Declare PtrSafe Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 Private Declare Sub Sleep Lib "kernel32" (ByVal dwMilliseconds As Long)
 #End If
 
-' Vietnamese interface text, shown here without accents for reference:
-'   CAP_INSERT = Chen cong thuc
-'   CAP_NUMBERED = Chen cong thuc co danh so
-'   CAP_EDIT = Sua cong thuc
-'   CAP_UPDATE = Cap nhat so thu tu
-'   MSG_NO_DOC = Hay mo mot van ban truoc.
-'   MSG_SELECT = Hay bam chon mot cong thuc Vivian Math trong van ban roi bam lai.
-'   MSG_NO_APP = Khong mo duoc phan mem Vivian Math. Hay mo Vivian Math va bam "Cai vao Word" lai.
-'   MSG_ERROR = Khong chen duoc cong thuc: 
+' Interface text is English on purpose: MsgBox uses the system ANSI code page and
+' shows Vietnamese accented letters as "?" on many PCs.
 Private Function T(ByVal key As String) As String
-    If key = "CAP_INSERT" Then T = "Ch" & ChrW(232) & "n c" & ChrW(244) & "ng th" & ChrW(7913) & "c"
-    If key = "CAP_NUMBERED" Then T = "Ch" & ChrW(232) & "n c" & ChrW(244) & "ng th" & ChrW(7913) & "c c" & ChrW(243) & " " & ChrW(273) & ChrW(225) & "nh s" & ChrW(7889)
-    If key = "CAP_EDIT" Then T = "S" & ChrW(7917) & "a c" & ChrW(244) & "ng th" & ChrW(7913) & "c"
-    If key = "CAP_UPDATE" Then T = "C" & ChrW(7853) & "p nh" & ChrW(7853) & "t s" & ChrW(7889) & " th" & ChrW(7913) & " t" & ChrW(7921)
-    If key = "MSG_NO_DOC" Then T = "H" & ChrW(227) & "y m" & ChrW(7903) & " m" & ChrW(7897) & "t v" & ChrW(259) & "n b" & ChrW(7843) & "n tr" & ChrW(432) & ChrW(7899) & "c."
-    If key = "MSG_SELECT" Then T = "H" & ChrW(227) & "y b" & ChrW(7845) & "m ch" & ChrW(7885) & "n m" & ChrW(7897) & "t c" & ChrW(244) & "ng th" & ChrW(7913) & "c Vivian Math trong v" & ChrW(259) & "n b" & ChrW(7843) & "n r" & ChrW(7891) & "i b" & ChrW(7845) & "m l" & ChrW(7841) & "i."
-    If key = "MSG_NO_APP" Then T = "Kh" & ChrW(244) & "ng m" & ChrW(7903) & " " & ChrW(273) & ChrW(432) & ChrW(7907) & "c ph" & ChrW(7847) & "n m" & ChrW(7873) & "m Vivian Math. H" & ChrW(227) & "y m" & ChrW(7903) & " Vivian Math v" & ChrW(224) & " b" & ChrW(7845) & "m " & ChrW(34) & "C" & ChrW(224) & "i v" & ChrW(224) & "o Word" & ChrW(34) & " l" & ChrW(7841) & "i."
-    If key = "MSG_ERROR" Then T = "Kh" & ChrW(244) & "ng ch" & ChrW(232) & "n " & ChrW(273) & ChrW(432) & ChrW(7907) & "c c" & ChrW(244) & "ng th" & ChrW(7913) & "c: "
+    If key = "CAP_INSERT" Then T = "Insert Equation"
+    If key = "CAP_NUMBERED" Then T = "Insert Numbered Equation"
+    If key = "CAP_EDIT" Then T = "Edit Equation"
+    If key = "CAP_UPDATE" Then T = "Update Equation Numbers"
+    If key = "MSG_NO_DOC" Then T = "Open a document first."
+    If key = "MSG_SELECT" Then T = "Click a Vivian Math equation in the document to select it, then try again."
+    If key = "MSG_NO_APP" Then T = "Could not start Vivian Math. Open the Vivian Math app and click the install-into-Word button again."
+    If key = "MSG_ERROR" Then T = "Could not insert the equation: "
 End Function
 
 ' Runs when Word loads this global template.

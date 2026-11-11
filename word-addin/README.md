@@ -4,10 +4,12 @@ Thêm bốn nút vào thẻ **Add-Ins** của Word (Word 2007 trở lên, trên 
 
 | Nút | Tác dụng |
 | --- | --- |
-| Chèn công thức | Mở Vivian Math, soạn xong bấm "Chèn vào Word" để đưa công thức vào vị trí con trỏ |
-| Chèn công thức có đánh số | Công thức nằm giữa dòng riêng, số thứ tự (1), (2)... ở lề phải |
-| Sửa công thức | Bấm chọn một công thức đã chèn rồi bấm nút này để mở lại và sửa |
-| Cập nhật số thứ tự | Đánh số lại sau khi thêm, xóa hoặc đổi chỗ công thức |
+| Insert Equation | Mở Vivian Math, soạn xong bấm "Chèn vào Word" để đưa công thức vào vị trí con trỏ |
+| Insert Numbered Equation | Công thức nằm giữa dòng riêng, số thứ tự (1), (2)... ở lề phải |
+| Edit Equation | Bấm chọn một công thức đã chèn rồi bấm nút này để mở lại và sửa |
+| Update Equation Numbers | Đánh số lại sau khi thêm, xóa hoặc đổi chỗ công thức |
+
+Tên nút và thông báo trong Word dùng tiếng Anh, vì hộp thông báo của Word hiển thị sai chữ tiếng Việt có dấu trên nhiều máy.
 
 ## Cài đặt
 
