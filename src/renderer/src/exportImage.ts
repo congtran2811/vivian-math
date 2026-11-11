@@ -34,6 +34,8 @@ export interface SvgResult {
   svg: string
   width: number
   height: number
+  /** Phần nằm dưới đường chân chữ, để đặt ảnh thẳng hàng với dòng văn bản. */
+  depth: number
 }
 
 /** Chuyển LaTeX thành ảnh SVG độc lập, nền trong suốt. */
@@ -54,12 +56,14 @@ export function latexToSvg(latex: string, opts: ExportOptions): SvgResult {
   }
   const width = size('width')
   const height = size('height')
+  const align = svg.match(/vertical-align:\s*(-?[\d.]+)ex/)
+  const depth = align ? Math.max(0, -parseFloat(align[1]) * exToPx) : 0
   svg = svg
     .replace(/width="[\d.]+ex"/, `width="${width}"`)
     .replace(/height="[\d.]+ex"/, `height="${height}"`)
     .replace(/style="[^"]*"/, '')
     .replace(/currentColor/g, opts.color)
-  return { svg: `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, width, height }
+  return { svg: `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, width, height, depth }
 }
 
 /** Vẽ SVG lên canvas để lấy ảnh PNG nền trong suốt. scale = 2 cho ảnh nét khi in. */

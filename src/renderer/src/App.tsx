@@ -54,6 +54,8 @@ export default function App(): JSX.Element {
   const [recent, setRecent] = useState<string[]>(() => loadList(RECENT_KEY))
   const [showShortcuts, setShowShortcuts] = useState(false)
   const [status, setStatus] = useState<{ text: string; error?: boolean } | null>(null)
+  // Khác null khi Word mở phần mềm để soạn một công thức; fontSize là cỡ chữ của dòng văn bản trong Word.
+  const [word, setWord] = useState<{ fontSize: number } | null>(null)
 
   const say = (text: string, error = false): void => {
     setStatus({ text, error })
@@ -184,6 +186,45 @@ export default function App(): JSX.Element {
     say('Đã dán công thức từ Word')
   }
 
+  // Hỏi xem có phải Word vừa mở phần mềm không, nếu có thì nạp công thức cần sửa.
+  useEffect(() => {
+    void window.vivian?.wordSession?.().then((session) => {
+      if (!session) return
+      setWord({ fontSize: session.fontSize })
+      setFormula(session.latex, false)
+      fieldRef.current?.focus()
+    })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const onInsertIntoWord = async (): Promise<void> => {
+    if (!word || !window.vivian) return
+    requireFormula()
+    // Vẽ theo đúng cỡ chữ của Word (1 px ứng với 1 point), ảnh phóng 4 lần để in ra vẫn nét.
+    const opts = { fontSize: word.fontSize, color }
+    const { width, height, depth } = latexToSvg(latex, opts)
+    const blob = await latexToPng(latex, opts, 4)
+    remember(latex)
+    await window.vivian.wordFinish({ png: new Uint8Array(await blob.arrayBuffer()), latex, width, height, depth })
+  }
+
+  const WORD_INSTALL_MESSAGES: Record<string, string> = {
+    OK: 'Đã cài bộ nút Vivian Math vào Word. Mở lại Word và xem thẻ Add-Ins.',
+    NOT_WINDOWS: 'Hiện chỉ hỗ trợ Word trên Windows.',
+    WORD_RUNNING: 'Hãy đóng hết các cửa sổ Word rồi bấm lại.',
+    NO_WORD: 'Không tìm thấy Microsoft Word trên máy này.'
+  }
+
+  const onInstallWordAddin = async (): Promise<void> => {
+    if (!window.vivian?.installWordAddin) throw new Error('Chức năng này chỉ có trong phần mềm cài trên máy.')
+    say('Đang cài bộ nút vào Word, chờ một chút…')
+    const result = await window.vivian.installWordAddin()
+    const [kind, ...rest] = result.split(' ')
+    const code = kind === 'OK' ? 'OK' : rest[0]
+    const message = WORD_INSTALL_MESSAGES[code] ?? `Không cài được vào Word: ${rest.join(' ')}`
+    say(message, kind !== 'OK')
+  }
+
   const confirmDiscard = (): boolean =>
     !dirty || window.confirm('Công thức chưa được lưu. Bạn có muốn bỏ thay đổi không?')
 
@@ -262,7 +303,10 @@ export default function App(): JSX.Element {
     const onKey = (e: KeyboardEvent): void => {
       if (!(e.ctrlKey || e.metaKey)) return
       const key = e.key.toLowerCase()
-      if (key === 's') {
+      if (key === 'enter' && word) {
+        e.preventDefault()
+        void run(onInsertIntoWord)()
+      } else if (key === 's') {
         e.preventDefault()
         void run(() => onSave(e.shiftKey))()
       } else if (key === 'o') {
@@ -293,6 +337,14 @@ export default function App(): JSX.Element {
         <span className="filename">{title}</span>
         {status && <span className={status.error ? 'status error' : 'status'}>{status.text}</span>}
       </header>
+
+      {word && (
+        <div className="word-banner">
+          <span>Đang soạn công thức cho Word (cỡ chữ {word.fontSize} pt)</span>
+          <button className="primary" onClick={run(onInsertIntoWord)}>Chèn vào Word</button>
+          <button onClick={() => void window.vivian?.wordCancel()}>Hủy</button>
+        </div>
+      )}
 
       <div className="toolbar">
         <button onClick={onNew} title="Ctrl+N">Mới</button>
@@ -327,6 +379,11 @@ export default function App(): JSX.Element {
         <span className="sep" />
         <button onClick={addFavorite} title="Lưu công thức (hoặc phần đang bôi đen) để dùng lại">★ Yêu thích</button>
         <button onClick={() => setShowShortcuts((v) => !v)} className={showShortcuts ? 'on' : ''}>Phím tắt</button>
+        {!word && (
+          <button onClick={run(onInstallWordAddin)} title="Thêm các nút Chèn công thức vào thẻ Add-Ins của Word">
+            Cài vào Word
+          </button>
+        )}
       </div>
 
       {showShortcuts && (

@@ -70,3 +70,9 @@ kbd { display: inline-block; min-width: 54px; padding: 1px 6px; border: 1px soli
 .fav { display: flex; }
 .fav > button:first-child { flex: 1; border-radius: 6px 0 0 6px; }
 .fav .remove { min-width: 28px; border-left: none; border-radius: 0 6px 6px 0; color: #dc2626; font-size: 16px; }
+
+/* Chế độ soạn cho Word */
+.word-banner { display: flex; align-items: center; gap: 8px; padding: 10px 12px; margin-bottom: 12px; background: #eef2ff; border: 1px solid #2b4eff; border-radius: 8px; color: #1f2a5c; }
+.word-banner span { margin-right: auto; font-weight: 600; }
+button.primary { background: #2b4eff; border-color: #2b4eff; color: #fff; font-weight: 600; }
+button.primary:hover { background: #1f3fe0; }
