@@ -34,7 +34,7 @@ Private Function T(ByVal key As String) As String
     If key = "CAP_EDIT" Then T = "Edit Equation"
     If key = "CAP_UPDATE" Then T = "Update Equation Numbers"
     If key = "MSG_NO_DOC" Then T = "Open a document first."
-    If key = "MSG_SELECT" Then T = "Click a Vivian Math equation in the document to select it, then try again."
+    If key = "MSG_SELECT" Then T = "No Vivian Math equation found here. Click an equation inserted with the Vivian Math buttons, then try again."
     If key = "MSG_NO_APP" Then T = "Could not start Vivian Math. Open the Vivian Math app and click the install-into-Word button again."
     If key = "MSG_ERROR" Then T = "Could not insert the equation: "
 End Function
@@ -77,12 +77,16 @@ Public Sub VM_InsertNumbered()
 End Sub
 
 Public Sub VM_Edit()
+    Dim shp As InlineShape
     If Documents.Count = 0 Then
         MsgBox T("MSG_NO_DOC"), vbInformation, BAR_NAME
-    ElseIf SelectedEquation() Is Nothing Then
+        Exit Sub
+    End If
+    Set shp = EquationToEdit()
+    If shp Is Nothing Then
         MsgBox T("MSG_SELECT"), vbInformation, BAR_NAME
     Else
-        DoInsert False
+        DoInsert False, shp
     End If
 End Sub
 
@@ -90,16 +94,68 @@ Public Sub VM_UpdateNumbers()
     If Documents.Count > 0 Then ActiveDocument.Fields.Update
 End Sub
 
-' The selected Vivian Math equation, or Nothing.
-Private Function SelectedEquation() As InlineShape
-    Dim shp As InlineShape
-    Set SelectedEquation = Nothing
-    If Selection.InlineShapes.Count < 1 Then Exit Function
-    Set shp = Selection.InlineShapes(1)
-    If Left$(shp.AlternativeText, Len(TAG)) = TAG Then Set SelectedEquation = shp
+Private Function IsEquation(ByVal shp As InlineShape) As Boolean
+    On Error Resume Next
+    IsEquation = (Left$(shp.AlternativeText, Len(TAG)) = TAG)
 End Function
 
-Private Sub DoInsert(ByVal numbered As Boolean)
+' First Vivian Math equation inside the range, or Nothing.
+Private Function FirstEquationIn(ByVal rng As Range) As InlineShape
+    Dim shp As InlineShape
+    Set FirstEquationIn = Nothing
+    For Each shp In rng.InlineShapes
+        If IsEquation(shp) Then
+            Set FirstEquationIn = shp
+            Exit Function
+        End If
+    Next shp
+End Function
+
+' The selected Vivian Math equation, or Nothing.
+Private Function SelectedEquation() As InlineShape
+    Set SelectedEquation = Nothing
+    On Error Resume Next
+    If Selection.InlineShapes.Count < 1 Then Exit Function
+    Set SelectedEquation = FirstEquationIn(Selection.Range)
+End Function
+
+' The equation the user means to edit: the selected one, a floating one
+' (wrapping changed by the user), the one touching the cursor, or the only
+' one in the current paragraph.
+Private Function EquationToEdit() As InlineShape
+    Dim rng As Range, shp As InlineShape, found As InlineShape
+    Dim i As Long, n As Long
+
+    Set EquationToEdit = SelectedEquation()
+    If Not EquationToEdit Is Nothing Then Exit Function
+
+    On Error Resume Next
+    n = 0
+    n = Selection.ShapeRange.Count
+    For i = 1 To n
+        If Left$(Selection.ShapeRange(i).AlternativeText, Len(TAG)) = TAG Then
+            Set EquationToEdit = Selection.ShapeRange(i).ConvertToInlineShape
+            If Not EquationToEdit Is Nothing Then Exit Function
+        End If
+    Next i
+
+    Set rng = Selection.Range
+    rng.MoveStart 1, -1
+    rng.MoveEnd 1, 1
+    Set EquationToEdit = FirstEquationIn(rng)
+    If Not EquationToEdit Is Nothing Then Exit Function
+
+    n = 0
+    For Each shp In Selection.Paragraphs(1).Range.InlineShapes
+        If IsEquation(shp) Then
+            n = n + 1
+            Set found = shp
+        End If
+    Next shp
+    If n = 1 Then Set EquationToEdit = found
+End Function
+
+Private Sub DoInsert(ByVal numbered As Boolean, Optional ByVal editShape As InlineShape = Nothing)
     Dim old As InlineShape, target As Range
     Dim latexIn As String, latexOut As String, png As String
     Dim fontSize As Single, w As Single, h As Single, depth As Single
@@ -110,7 +166,8 @@ Private Sub DoInsert(ByVal numbered As Boolean)
     End If
     On Error GoTo Failed
 
-    Set old = SelectedEquation()
+    Set old = editShape
+    If old Is Nothing Then Set old = SelectedEquation()
     If Not old Is Nothing Then latexIn = Mid$(old.AlternativeText, Len(TAG) + 1)
 
     ' Mixed sizes in the selection report a huge "undefined" value.
