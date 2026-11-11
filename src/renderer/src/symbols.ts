@@ -154,6 +154,53 @@ export const GROUPS: PaletteGroup[] = [
     ]
   },
   {
+    name: 'Ma trận',
+    items: [
+      tpl(`\\begin{pmatrix}${B}&${B}\\\\${B}&${B}\\end{pmatrix}`, '\\begin{pmatrix}#?&#?\\\\#?&#?\\end{pmatrix}', 'Ma trận 2×2 ngoặc tròn'),
+      tpl(`\\begin{bmatrix}${B}&${B}\\\\${B}&${B}\\end{bmatrix}`, '\\begin{bmatrix}#?&#?\\\\#?&#?\\end{bmatrix}', 'Ma trận 2×2 ngoặc vuông'),
+      tpl(`\\begin{vmatrix}${B}&${B}\\\\${B}&${B}\\end{vmatrix}`, '\\begin{vmatrix}#?&#?\\\\#?&#?\\end{vmatrix}', 'Định thức 2×2'),
+      tpl(
+        `\\begin{pmatrix}${B}&${B}&${B}\\\\${B}&${B}&${B}\\\\${B}&${B}&${B}\\end{pmatrix}`,
+        '\\begin{pmatrix}#?&#?&#?\\\\#?&#?&#?\\\\#?&#?&#?\\end{pmatrix}',
+        'Ma trận 3×3'
+      ),
+      tpl(`\\begin{matrix}${B}&${B}\\\\${B}&${B}\\end{matrix}`, '\\begin{matrix}#?&#?\\\\#?&#?\\end{matrix}', 'Bảng 2×2 không ngoặc'),
+      tpl(`\\begin{pmatrix}${B}\\\\${B}\\end{pmatrix}`, '\\begin{pmatrix}#?\\\\#?\\end{pmatrix}', 'Cột 2 hàng'),
+      tpl(
+        `\\begin{aligned}${B}&=${B}\\\\&=${B}\\end{aligned}`,
+        '\\begin{aligned}#?&=#?\\\\&=#?\\end{aligned}',
+        'Biến đổi nhiều dòng, thẳng hàng dấu ='
+      ),
+      tpl(
+        `\\begin{aligned}${B}&\\Leftrightarrow ${B}\\\\&\\Leftrightarrow ${B}\\end{aligned}`,
+        '\\begin{aligned}#?&\\Leftrightarrow #?\\\\&\\Leftrightarrow #?\\end{aligned}',
+        'Biến đổi tương đương nhiều dòng'
+      )
+    ]
+  },
+  {
+    name: 'Dấu và kiểu chữ',
+    items: [
+      tpl(`\\hat{${B}}`, '\\hat{#@}', 'Dấu mũ'),
+      tpl(`\\bar{${B}}`, '\\bar{#@}', 'Gạch ngang trên'),
+      tpl(`\\vec{${B}}`, '\\vec{#@}', 'Mũi tên vectơ'),
+      tpl(`\\dot{${B}}`, '\\dot{#@}', 'Một chấm trên'),
+      tpl(`\\ddot{${B}}`, '\\ddot{#@}', 'Hai chấm trên'),
+      tpl(`\\tilde{${B}}`, '\\tilde{#@}', 'Dấu ngã'),
+      tpl(`${B}'`, "#@'", 'Dấu phẩy (phẩy trên)'),
+      tpl(`\\underline{${B}}`, '\\underline{#@}', 'Gạch dưới'),
+      tpl(`\\overbrace{${B}}^{${B}}`, '\\overbrace{#@}^{#?}', 'Ngoặc ôm phía trên'),
+      tpl(`\\underbrace{${B}}_{${B}}`, '\\underbrace{#@}_{#?}', 'Ngoặc ôm phía dưới'),
+      tpl(`\\boxed{${B}}`, '\\boxed{#@}', 'Đóng khung kết quả'),
+      tpl(`\\cancel{${B}}`, '\\cancel{#@}', 'Gạch bỏ (rút gọn)'),
+      tpl('\\text{abc}', '\\text{#?}', 'Chữ thường (lời văn)'),
+      tpl('\\mathbf{abc}', '\\mathbf{#@}', 'Chữ đậm'),
+      tpl('\\mathrm{abc}', '\\mathrm{#@}', 'Chữ đứng'),
+      tpl('\\mathbb{ABC}', '\\mathbb{#@}', 'Chữ rỗng (tập hợp số)'),
+      tpl('\\mathcal{ABC}', '\\mathcal{#@}', 'Chữ hoa viết tay')
+    ]
+  },
+  {
     name: 'Công thức THCS',
     wide: true,
     items: [

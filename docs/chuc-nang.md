@@ -12,12 +12,16 @@ Nền tảng: Windows trước, sau đó macOS (cùng một mã nguồn Electron
 - [x] Bảng ký hiệu đầy đủ theo nhóm như MathType (đại số, hình học, tập hợp, chữ Hy Lạp, mũi tên)
 - [x] Mẫu theo chương trình THCS: tỉ lệ thức, hằng đẳng thức, căn bậc ba, hệ thức lượng, tỉ số lượng giác, định lý Pythagore, Thalès, Viète
 - [x] Lưu và mở file (.vmath)
-- [ ] Danh sách công thức gần đây
+- [x] Danh sách công thức gần đây và thanh yêu thích (lưu biểu thức hay dùng)
 - [x] Xuất ảnh PNG, SVG (nền trong suốt, chọn cỡ chữ và màu)
 - [x] Sao chép dạng ảnh để dán vào Word, PowerPoint, Zalo
 - [x] Hoàn tác, làm lại, phím tắt Ctrl+N, Ctrl+O, Ctrl+S
-- [ ] Phím tắt chèn ký hiệu giống MathType
-- [ ] Căn chỉnh nhiều dòng, ma trận, bảng
+- [x] Phím tắt chèn mẫu giống MathType (Ctrl+F, Ctrl+R, Ctrl+H, Ctrl+L...)
+- [x] Ma trận (thêm, xóa hàng và cột), biến đổi nhiều dòng thẳng hàng
+- [x] Dấu trên chữ, đóng khung, gạch bỏ, kiểu chữ (đậm, đứng, lời văn)
+- [x] Tô màu từng phần công thức, phóng to và thu nhỏ vùng soạn
+- [ ] Dán MathML từ Word để sửa lại
+- [ ] Công thức hóa học
 - [ ] Giao diện tiếng Việt và tiếng Anh
 
 ## Bước 3: hình 3D và video giải thích

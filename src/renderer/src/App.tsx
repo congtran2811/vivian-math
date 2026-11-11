@@ -1,13 +1,44 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
-import { convertLatexToMarkup, convertLatexToMathMl, type MathfieldElement } from 'mathlive'
+import { convertLatexToMarkup, convertLatexToMathMl, type MathfieldElement, type Selector } from 'mathlive'
 import { GROUPS } from './symbols'
 import { latexToPng, latexToSvg } from './exportImage'
 import { VMATH_FILTER, openFile, parse, saveFile, serialize } from './files'
+import { loadList, saveList } from './storage'
 
 const START = 'x=\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}'
 const FONT_SIZES = [16, 20, 24, 32, 48, 64]
+const ZOOMS = [20, 28, 36, 48, 64]
+const FAVORITES_KEY = 'vivian.favorites'
+const RECENT_KEY = 'vivian.recent'
+const MAX_RECENT = 12
+const MAX_FAVORITES = 40
+
+// Phím tắt chèn nhanh, theo thói quen của MathType (Ctrl + phím).
+const SHORTCUTS: { key: string; shift?: boolean; insert: string; label: string; name: string }[] = [
+  { key: 'f', insert: '\\frac{#@}{#?}', label: 'Ctrl+F', name: 'Phân số' },
+  { key: 'r', insert: '\\sqrt{#@}', label: 'Ctrl+R', name: 'Căn bậc hai' },
+  { key: 'h', insert: '#@^{#?}', label: 'Ctrl+H', name: 'Chỉ số trên (lũy thừa)' },
+  { key: 'l', insert: '#@_{#?}', label: 'Ctrl+L', name: 'Chỉ số dưới' },
+  { key: 'j', insert: '#@_{#?}^{#?}', label: 'Ctrl+J', name: 'Chỉ số trên và dưới' },
+  { key: '9', insert: '\\left(#@\\right)', label: 'Ctrl+9', name: 'Ngoặc tròn' },
+  { key: '[', insert: '\\left[#@\\right]', label: 'Ctrl+[', name: 'Ngoặc vuông' },
+  { key: '{', shift: true, insert: '\\left\\{#@\\right\\}', label: 'Ctrl+Shift+[', name: 'Ngoặc nhọn' },
+  { key: 't', insert: '\\left|#@\\right|', label: 'Ctrl+T', name: 'Giá trị tuyệt đối' },
+  { key: 'e', insert: '\\text{#?}', label: 'Ctrl+E', name: 'Chữ thường (lời văn)' }
+]
+
+const MATRIX_COMMANDS = [
+  { command: 'addRowAfter', name: 'Thêm hàng' },
+  { command: 'addColumnAfter', name: 'Thêm cột' },
+  { command: 'removeRow', name: 'Xóa hàng' },
+  { command: 'removeColumn', name: 'Xóa cột' }
+] as const
+
+const FAVORITES_TAB = GROUPS.length
+const RECENT_TAB = GROUPS.length + 1
 
 const baseName = (path: string): string => path.split(/[\\/]/).pop() ?? path
+const markup = (latex: string): string => convertLatexToMarkup(latex, { defaultMode: 'math' })
 
 export default function App(): JSX.Element {
   const fieldRef = useRef<MathfieldElement | null>(null)
@@ -17,6 +48,10 @@ export default function App(): JSX.Element {
   const [dirty, setDirty] = useState(false)
   const [fontSize, setFontSize] = useState(24)
   const [color, setColor] = useState('#000000')
+  const [zoom, setZoom] = useState(28)
+  const [favorites, setFavorites] = useState<string[]>(() => loadList(FAVORITES_KEY))
+  const [recent, setRecent] = useState<string[]>(() => loadList(RECENT_KEY))
+  const [showShortcuts, setShowShortcuts] = useState(false)
   const [status, setStatus] = useState<{ text: string; error?: boolean } | null>(null)
 
   const say = (text: string, error = false): void => {
@@ -39,18 +74,6 @@ export default function App(): JSX.Element {
     setDirty(markDirty)
   }
 
-  useEffect(() => {
-    const field = fieldRef.current
-    if (!field) return
-    field.value = START
-    const onInput = (): void => {
-      setLatex(field.value)
-      setDirty(true)
-    }
-    field.addEventListener('input', onInput)
-    return () => field.removeEventListener('input', onInput)
-  }, [])
-
   const insert = (tpl: string): void => {
     const field = fieldRef.current
     if (!field) return
@@ -60,12 +83,80 @@ export default function App(): JSX.Element {
     setDirty(true)
   }
 
-  const command = (name: 'undo' | 'redo'): void => {
+  useEffect(() => {
+    const field = fieldRef.current
+    if (!field) return
+    field.value = START
+    const onInput = (): void => {
+      setLatex(field.value)
+      setDirty(true)
+    }
+    // Bắt phím tắt trước khi MathLive xử lý, để Ctrl+F, Ctrl+R... chèn mẫu như MathType.
+    const onKey = (e: KeyboardEvent): void => {
+      if (!(e.ctrlKey || e.metaKey) || e.altKey) return
+      const hit = SHORTCUTS.find((s) => s.key === e.key.toLowerCase() && !!s.shift === e.shiftKey)
+      if (!hit) return
+      e.preventDefault()
+      e.stopPropagation()
+      insert(hit.insert)
+    }
+    field.addEventListener('input', onInput)
+    field.addEventListener('keydown', onKey, { capture: true })
+    return () => {
+      field.removeEventListener('input', onInput)
+      field.removeEventListener('keydown', onKey, { capture: true })
+    }
+    // Chỉ gắn một lần: insert chỉ dùng ref và các hàm setState ổn định.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  const command = (name: Selector): void => {
     const field = fieldRef.current
     if (!field) return
     field.executeCommand(name)
     field.focus()
     setLatex(field.value)
+    setDirty(true)
+  }
+
+  /** Ghi nhớ công thức vừa lưu, xuất hoặc sao chép vào danh sách gần đây. */
+  const remember = (value: string): void => {
+    if (!value.trim()) return
+    setRecent((list) => {
+      const next = [value, ...list.filter((x) => x !== value)].slice(0, MAX_RECENT)
+      saveList(RECENT_KEY, next)
+      return next
+    })
+  }
+
+  const addFavorite = (): void => {
+    const field = fieldRef.current
+    if (!field) return
+    // Nếu đang bôi đen một phần thì chỉ lưu phần đó, giống kéo biểu thức lên thanh công cụ của MathType.
+    const value = (field.selectionIsCollapsed ? field.value : field.getValue(field.selection, 'latex')).trim()
+    if (!value) return say('Chưa có công thức để thêm vào yêu thích.', true)
+    if (favorites.includes(value)) return say('Công thức này đã có trong yêu thích.')
+    const next = [...favorites, value].slice(-MAX_FAVORITES)
+    setFavorites(next)
+    saveList(FAVORITES_KEY, next)
+    setGroup(FAVORITES_TAB)
+    say('Đã thêm vào yêu thích')
+  }
+
+  const removeFavorite = (value: string): void => {
+    const next = favorites.filter((x) => x !== value)
+    setFavorites(next)
+    saveList(FAVORITES_KEY, next)
+  }
+
+  const colorSelection = (): void => {
+    const field = fieldRef.current
+    if (!field) return
+    if (field.selectionIsCollapsed) return say('Hãy bôi đen phần công thức cần tô màu trước.', true)
+    field.applyStyle({ color })
+    field.focus()
+    setLatex(field.value)
+    setDirty(true)
   }
 
   const confirmDiscard = (): boolean =>
@@ -93,6 +184,7 @@ export default function App(): JSX.Element {
     if (!saved) return
     setFilePath(saved)
     setDirty(false)
+    remember(latex)
     say(`Đã lưu ${baseName(saved)}`)
   }
 
@@ -107,7 +199,9 @@ export default function App(): JSX.Element {
     requireFormula()
     const { svg } = latexToSvg(latex, { fontSize, color })
     const saved = await saveFile(imageName('svg'), svg, { name: 'Ảnh SVG', extensions: ['svg'] })
-    if (saved) say(`Đã xuất ${baseName(saved)}`)
+    if (!saved) return
+    remember(latex)
+    say(`Đã xuất ${baseName(saved)}`)
   }
 
   const onExportPng = async (): Promise<void> => {
@@ -115,13 +209,16 @@ export default function App(): JSX.Element {
     const blob = await latexToPng(latex, { fontSize, color })
     const bytes = new Uint8Array(await blob.arrayBuffer())
     const saved = await saveFile(imageName('png'), bytes, { name: 'Ảnh PNG', extensions: ['png'] })
-    if (saved) say(`Đã xuất ${baseName(saved)}`)
+    if (!saved) return
+    remember(latex)
+    say(`Đã xuất ${baseName(saved)}`)
   }
 
   const onCopyImage = async (): Promise<void> => {
     requireFormula()
     const blob = await latexToPng(latex, { fontSize, color })
     await navigator.clipboard.write([new ClipboardItem({ 'image/png': blob })])
+    remember(latex)
     say('Đã sao chép ảnh, dán vào Word hoặc PowerPoint bằng Ctrl+V')
   }
 
@@ -131,10 +228,11 @@ export default function App(): JSX.Element {
         ? latex
         : `<math xmlns="http://www.w3.org/1998/Math/MathML">${convertLatexToMathMl(latex)}</math>`
     await navigator.clipboard.writeText(text)
+    remember(latex)
     say(`Đã sao chép ${kind}`)
   }
 
-  // Phím tắt giống các phần mềm văn phòng.
+  // Phím tắt file giống các phần mềm văn phòng.
   useEffect(() => {
     const onKey = (e: KeyboardEvent): void => {
       if (!(e.ctrlKey || e.metaKey)) return
@@ -155,12 +253,13 @@ export default function App(): JSX.Element {
   })
 
   // Vẽ sẵn nhãn các nút, chỉ tính một lần.
-  const labels = useMemo(
-    () => GROUPS.map((g) => g.items.map((it) => convertLatexToMarkup(it.show, { defaultMode: 'math' }))),
-    []
-  )
+  const labels = useMemo(() => GROUPS.map((g) => g.items.map((it) => markup(it.show))), [])
+  const favoriteLabels = useMemo(() => favorites.map(markup), [favorites])
+  const recentLabels = useMemo(() => recent.map(markup), [recent])
 
   const title = (filePath ? baseName(filePath) : 'Chưa đặt tên') + (dirty ? ' •' : '')
+  const zoomStep = (dir: 1 | -1): void =>
+    setZoom((z) => ZOOMS[Math.min(ZOOMS.length - 1, Math.max(0, ZOOMS.indexOf(z) + dir))])
 
   return (
     <div className="app">
@@ -179,22 +278,45 @@ export default function App(): JSX.Element {
         <button onClick={() => command('undo')} title="Ctrl+Z">Hoàn tác</button>
         <button onClick={() => command('redo')} title="Ctrl+Y">Làm lại</button>
         <span className="sep" />
+        <button onClick={() => zoomStep(-1)} title="Thu nhỏ vùng soạn" disabled={zoom === ZOOMS[0]}>A−</button>
+        <button onClick={() => zoomStep(1)} title="Phóng to vùng soạn" disabled={zoom === ZOOMS[ZOOMS.length - 1]}>A+</button>
+        <span className="sep" />
         <label>
-          Cỡ chữ
+          Màu
+          <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
+        </label>
+        <button onClick={colorSelection} title="Tô màu đang chọn cho phần công thức được bôi đen">Tô màu phần chọn</button>
+        <span className="sep" />
+        <label>
+          Cỡ ảnh
           <select value={fontSize} onChange={(e) => setFontSize(Number(e.target.value))}>
             {FONT_SIZES.map((s) => (
               <option key={s} value={s}>{s}</option>
             ))}
           </select>
         </label>
-        <label>
-          Màu
-          <input type="color" value={color} onChange={(e) => setColor(e.target.value)} />
-        </label>
         <button onClick={run(onExportPng)}>Xuất PNG</button>
         <button onClick={run(onExportSvg)}>Xuất SVG</button>
         <button onClick={run(onCopyImage)}>Sao chép ảnh</button>
+        <span className="sep" />
+        <button onClick={addFavorite} title="Lưu công thức (hoặc phần đang bôi đen) để dùng lại">★ Yêu thích</button>
+        <button onClick={() => setShowShortcuts((v) => !v)} className={showShortcuts ? 'on' : ''}>Phím tắt</button>
       </div>
+
+      {showShortcuts && (
+        <div className="shortcuts">
+          {SHORTCUTS.map((s) => (
+            <span key={s.label}>
+              <kbd>{s.label}</kbd> {s.name}
+            </span>
+          ))}
+          <span><kbd>Ctrl+S</kbd> Lưu</span>
+          <span><kbd>Ctrl+O</kbd> Mở</span>
+          <span><kbd>Ctrl+N</kbd> Mới</span>
+          <span><kbd>Ctrl+Z</kbd> Hoàn tác</span>
+          <span><kbd>Tab</kbd> Sang ô trống kế tiếp</span>
+        </div>
+      )}
 
       <div className="tabs">
         {GROUPS.map((g, i) => (
@@ -202,19 +324,66 @@ export default function App(): JSX.Element {
             {g.name}
           </button>
         ))}
-      </div>
-      <div className={GROUPS[group].wide ? 'palette wide' : 'palette'}>
-        {GROUPS[group].items.map((it, i) => (
-          <button
-            key={it.title}
-            title={it.title}
-            onClick={() => insert(it.insert)}
-            dangerouslySetInnerHTML={{ __html: labels[group][i] }}
-          />
-        ))}
+        <button className={group === FAVORITES_TAB ? 'tab active' : 'tab'} onClick={() => setGroup(FAVORITES_TAB)}>
+          ★ Yêu thích ({favorites.length})
+        </button>
+        <button className={group === RECENT_TAB ? 'tab active' : 'tab'} onClick={() => setGroup(RECENT_TAB)}>
+          Gần đây
+        </button>
       </div>
 
-      <math-field ref={fieldRef} class="editor" style={{ color }} />
+      {group < GROUPS.length && (
+        <div className={GROUPS[group].wide ? 'palette wide' : 'palette'}>
+          {GROUPS[group].items.map((it, i) => (
+            <button
+              key={it.title}
+              title={it.title}
+              onClick={() => insert(it.insert)}
+              dangerouslySetInnerHTML={{ __html: labels[group][i] }}
+            />
+          ))}
+          {GROUPS[group].name === 'Ma trận' &&
+            MATRIX_COMMANDS.map((c) => (
+              <button key={c.command} className="text-btn" title="Đặt con trỏ trong ma trận rồi bấm" onClick={() => command(c.command)}>
+                {c.name}
+              </button>
+            ))}
+        </div>
+      )}
+
+      {group === FAVORITES_TAB && (
+        <div className="palette wide">
+          {favorites.length === 0 && (
+            <p className="empty">Chưa có công thức yêu thích. Soạn công thức rồi bấm "★ Yêu thích" để lưu lại dùng nhiều lần.</p>
+          )}
+          {favorites.map((f, i) => (
+            <div className="fav" key={f}>
+              <button title="Chèn vào công thức" onClick={() => insert(f)} dangerouslySetInnerHTML={{ __html: favoriteLabels[i] }} />
+              <button className="remove" title="Xóa khỏi yêu thích" aria-label="Xóa khỏi yêu thích" onClick={() => removeFavorite(f)}>
+                ×
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {group === RECENT_TAB && (
+        <div className="palette wide">
+          {recent.length === 0 && (
+            <p className="empty">Các công thức bạn lưu, xuất ảnh hoặc sao chép sẽ hiện ở đây.</p>
+          )}
+          {recent.map((r, i) => (
+            <button
+              key={r}
+              title="Mở lại công thức này"
+              onClick={() => confirmDiscard() && setFormula(r, false)}
+              dangerouslySetInnerHTML={{ __html: recentLabels[i] }}
+            />
+          ))}
+        </div>
+      )}
+
+      <math-field ref={fieldRef} class="editor" style={{ color, fontSize: zoom }} />
 
       <section className="output">
         <label>LaTeX</label>

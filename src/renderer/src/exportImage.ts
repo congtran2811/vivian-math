@@ -38,7 +38,11 @@ export interface SvgResult {
 
 /** Chuyển LaTeX thành ảnh SVG độc lập, nền trong suốt. */
 export function latexToSvg(latex: string, opts: ExportOptions): SvgResult {
-  const node = doc.convert(latex.replace(/\\placeholder(\[[^\]]*\])?\{\}/g, '\\square '), { display: true })
+  const source = latex
+    // Ô trống trong \text{} phải bỏ đi, vì MathJax không hiểu lệnh toán bên trong lời văn.
+    .replace(/\\text\{\\placeholder(\[[^\]]*\])?\{\}\}/g, '\\text{ }')
+    .replace(/\\placeholder(\[[^\]]*\])?\{\}/g, '\\square ')
+  const node = doc.convert(source, { display: true })
   let svg = adaptor.innerHTML(node)
   if (svg.includes('data-mjx-error')) throw new Error('Công thức chưa hợp lệ, không xuất được ảnh.')
 
