@@ -51,7 +51,7 @@ function pickVideoFormat(): { mime: string; ext: string } {
   throw new Error('Máy này không hỗ trợ ghi video.')
 }
 
-export default function Shapes3D({ active, word }: { active: boolean; word: boolean }): JSX.Element {
+export default function Shapes3D({ active, word, restore }: { active: boolean; word: boolean; restore?: unknown }): JSX.Element {
   const canvasRef = useRef<HTMLCanvasElement | null>(null)
   const [shapeId, setShapeId] = useState(SHAPES[0].id)
   const shape = SHAPES.find((s) => s.id === shapeId)!
@@ -237,12 +237,32 @@ export default function Shapes3D({ active, word }: { active: boolean; word: bool
     }
   }
 
+  // Word mở lại một hình đã chèn: chọn lại hình, kích thước và góc nhìn.
+  useEffect(() => {
+    const saved = restore as { shapeId?: string; params?: Record<string, number>; cam?: number[] } | undefined
+    const target = SHAPES.find((s) => s.id === saved?.shapeId)
+    if (!saved || !target) return
+    const t = three.current
+    if (t && Array.isArray(saved.cam) && saved.cam.length === 3 && saved.cam.every((n) => Number.isFinite(n))) {
+      // Chỉ cần đúng hướng nhìn: khoảng cách được tính lại khi dựng hình.
+      t.camera.position.copy(t.controls.target).add(new THREE.Vector3(saved.cam[0], saved.cam[1], saved.cam[2]))
+      t.controls.update()
+    }
+    setShapeId(target.id)
+    const next = Object.fromEntries(
+      target.params.map((p) => [p.key, Number.isFinite(saved.params?.[p.key]) ? saved.params![p.key] : p.value])
+    )
+    setValues((v) => ({ ...v, [target.id]: next }))
+  }, [restore])
+
   const insertIntoWord = async (): Promise<void> => {
     const canvas = canvasRef.current!
     const blob = await new Promise<Blob>((resolve, reject) =>
       canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Không tạo được ảnh.'))), 'image/png')
     )
-    await insertImageIntoWord(blob, canvas.width, canvas.height, 400)
+    const t = three.current
+    const cam = t ? t.camera.position.clone().sub(t.controls.target).toArray() : undefined
+    await insertImageIntoWord(blob, canvas.width, canvas.height, 400, { view: 'shapes', state: { shapeId, params, cam } })
   }
 
   const exportImage = (): void => {

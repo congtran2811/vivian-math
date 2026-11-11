@@ -5,6 +5,7 @@ import { latexToPng, latexToSvg } from './exportImage'
 import { VMATH_FILTER, openFile, parse, saveFile, serialize } from './files'
 import { loadList, saveList } from './storage'
 import { clipboardToLatex, hasMathML } from './wordPaste'
+import { parseFigure } from './WordInsert'
 
 const START = 'x=\\frac{-b\\pm\\sqrt{b^2-4ac}}{2a}'
 const FONT_SIZES = [16, 20, 24, 32, 48, 64]
@@ -198,7 +199,8 @@ export default function App(): JSX.Element {
         if (!inWordRef.current) stashRef.current = { latex: fieldRef.current?.value ?? '', dirty: dirtyRef.current }
         inWordRef.current = true
         setWord({ fontSize: session.fontSize })
-        setFormula(session.latex, false)
+        // Word đang yêu cầu sửa một hình vẽ chứ không phải công thức: để trống ô soạn.
+        setFormula(parseFigure(session.latex) ? '' : session.latex, false)
         fieldRef.current?.focus()
       } else if (inWordRef.current) {
         inWordRef.current = false

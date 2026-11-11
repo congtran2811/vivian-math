@@ -17,7 +17,6 @@ Option Explicit
 '
 
 Private Const TAG As String = "VivianMath:"
-Private Const FIGURE_ALT As String = "Vivian Math figure"
 Private Const BAR_NAME As String = "Vivian Math"
 Private Const WAIT_SECONDS As Long = 3600
 
@@ -204,13 +203,9 @@ Private Sub InsertPicture(ByVal target As Range, ByVal png As String, ByVal late
     shp.LockAspectRatio = 0
     shp.Width = w
     shp.Height = h
-    ' A figure (graph, plane figure, solid) comes back without LaTeX: it is a
-    ' plain picture, not an equation that Edit Equation can reopen.
-    If latex = "" Then
-        shp.AlternativeText = FIGURE_ALT
-    Else
-        shp.AlternativeText = TAG & latex
-    End If
+    ' For a figure (graph, plane figure, solid) the app returns "@figure:" plus
+    ' its settings instead of LaTeX, so Edit Equation reopens the same figure.
+    shp.AlternativeText = TAG & latex
     ' Lower the picture so the formula's baseline sits on the text line.
     shp.Range.Font.Position = -CLng(depth)
     shp.Range.Select
@@ -280,10 +275,12 @@ Private Function RunEditor(ByVal latexIn As String, ByVal fontSize As Single, By
     WriteUtf8 folder & "\latex.txt", latexIn
     WriteUtf8 folder & "\fontsize.txt", Replace(CStr(fontSize), ",", ".")
 
+    Application.StatusBar = "Opening Vivian Math..."
     On Error Resume Next
     Shell AppCommand() & " --word-session=""" & folder & """", vbNormalFocus
     If Err.Number <> 0 Then
         On Error GoTo 0
+        Application.StatusBar = False
         MsgBox T("MSG_NO_APP"), vbExclamation, BAR_NAME
         Exit Function
     End If
@@ -298,15 +295,18 @@ Private Function RunEditor(ByVal latexIn As String, ByVal fontSize As Single, By
         If Dir$(folder & "\cancel.flag") <> "" Then
             CleanFolder folder
             busy = False
+            Application.StatusBar = False
             Application.Activate
             Exit Function
         End If
         If DateDiff("s", started, Now) > WAIT_SECONDS Then
             busy = False
+            Application.StatusBar = False
             Exit Function
         End If
     Loop
     busy = False
+    Application.StatusBar = False
     Application.Activate
 
     latexOut = ReadUtf8(folder & "\result.txt")

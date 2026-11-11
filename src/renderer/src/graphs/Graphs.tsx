@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Tex, vn } from '../Tex'
 import { num } from '../shapes3d/shapes'
 import { savePng, saveSvg, svgToPng } from '../svgExport'
@@ -84,7 +84,7 @@ function intersections(f: Fn, g: Fn): { x: number; y: number }[] {
   return xs.map((x) => ({ x, y: line.a * x + line.b }))
 }
 
-export default function Graphs({ word }: { word: boolean }): JSX.Element {
+export default function Graphs({ word, restore }: { word: boolean; restore?: unknown }): JSX.Element {
   const svgRef = useRef<SVGSVGElement | null>(null)
   const nextId = useRef(3)
   const [fns, setFns] = useState<Fn[]>([
@@ -93,6 +93,19 @@ export default function Graphs({ word }: { word: boolean }): JSX.Element {
   ])
   const [range, setRange] = useState(6)
   const [status, setStatus] = useState('')
+
+  // Word mở lại một đồ thị đã chèn: nạp lại các hàm số và phạm vi trục.
+  useEffect(() => {
+    const saved = restore as { fns?: Omit<Fn, 'id'>[]; range?: number } | undefined
+    if (!saved || !Array.isArray(saved.fns)) return
+    const list = saved.fns
+      .filter((f) => ['linear', 'quadratic', 'inverse'].includes(f.kind) && Number.isFinite(f.a) && Number.isFinite(f.b))
+      .slice(0, 4)
+      .map((f, i) => ({ id: i + 1, kind: f.kind, a: f.a, b: f.b, color: String(f.color) }))
+    nextId.current = list.length + 1
+    setFns(list)
+    if (Number.isFinite(saved.range)) setRange(Math.min(20, Math.max(3, saved.range!)))
+  }, [restore])
 
   // Đổi tọa độ toán học (trục y hướng lên) sang tọa độ màn hình.
   const unit = (SIZE - 2 * PAD) / (2 * range)
@@ -155,7 +168,10 @@ export default function Graphs({ word }: { word: boolean }): JSX.Element {
 
   const insertIntoWord = async (): Promise<void> => {
     const { blob, width, height } = await svgToPng(svgRef.current!, 3)
-    await insertImageIntoWord(blob, width, height, 280)
+    await insertImageIntoWord(blob, width, height, 280, {
+      view: 'graphs',
+      state: { fns: fns.map(({ kind, a, b, color }) => ({ kind, a, b, color })), range }
+    })
   }
 
   const tick = range > 10 ? 2 : 1
