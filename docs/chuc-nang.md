@@ -27,6 +27,7 @@ Nền tảng: Windows trước, sau đó macOS (cùng một mã nguồn Electron
 - [x] Xuất ảnh JPG, chọn nền trắng hoặc trong suốt, chọn độ nét (1, 2, 4 lần)
 - [x] Sao chép LaTeX kèm dấu $ để dán vào tài liệu LaTeX, Markdown
 - [x] Bộ nút trong Word (Word 2007 trở lên, Windows): chèn, chèn có đánh số, sửa lại công thức; chèn và sửa lại đồ thị, hình phẳng, hình 3D. Xem `word-addin/README.md`
+- [x] Trong Word: đổi `$...$` thành công thức và ngược lại (Toggle TeX), đổi cỡ mọi công thức một lượt, tham chiếu tới công thức đã đánh số
 - [ ] Bộ nút trong Word cho macOS
 - [ ] Nhập bằng chữ viết tay
 - [ ] Giao diện tiếng Việt và tiếng Anh

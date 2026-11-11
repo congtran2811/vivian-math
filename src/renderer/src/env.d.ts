@@ -23,6 +23,13 @@ declare global {
       wordFinish(args: { png: Uint8Array; latex: string; width: number; height: number; depth: number }): Promise<void>
       /** Gọi khi Word gửi công thức mới cho cửa sổ đang mở (session), hoặc khi soạn xong (null). */
       onWordSession(cb: (session: { latex: string; fontSize: number } | null) => void): void
+      /** Lô công thức Word nhờ dựng một lượt (không cần người dùng thao tác), hoặc null. */
+      wordBatch(): Promise<{ dir: string; items: { fontSize: number; latex: string }[] } | null>
+      wordBatchFinish(args: {
+        dir: string
+        results: ({ png: Uint8Array; width: number; height: number; depth: number } | null)[]
+      }): Promise<void>
+      onWordBatch(cb: () => void): void
       wordCancel(): Promise<void>
       installWordAddin(): Promise<string>
     }

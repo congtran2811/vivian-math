@@ -5,10 +5,13 @@ import 'mathlive/fonts.css'
 import 'mathlive/static.css'
 import Shell from './Shell'
 import './styles.css'
+import { startWordBatches } from './wordBatch'
 
 // Font được đóng gói sẵn trong app, không tải từ mạng.
 MathfieldElement.fontsDirectory = null
 MathfieldElement.soundsDirectory = null
+
+startWordBatches()
 
 createRoot(document.getElementById('root')!).render(
   <React.StrictMode>

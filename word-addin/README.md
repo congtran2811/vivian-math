@@ -8,6 +8,9 @@ Thêm bốn nút vào thẻ **Add-Ins** của Word (Word 2007 trở lên, trên 
 | Insert Numbered Equation | Công thức nằm giữa dòng riêng, số thứ tự (1), (2)... ở lề phải |
 | Edit Equation | Bấm chọn một công thức đã chèn rồi bấm nút này để mở lại và sửa |
 | Update Equation Numbers | Đánh số lại sau khi thêm, xóa hoặc đổi chỗ công thức |
+| Insert Equation Reference | Nhập số của một công thức đã đánh số để chèn "(n)" vào chỗ con trỏ. Số này tự đổi theo khi bấm Update Equation Numbers |
+| Toggle TeX | Gõ LaTeX giữa hai dấu `$`, ví dụ `$x^2+1$`, rồi bấm nút: mọi đoạn `$...$` trong vùng chọn (hoặc cả văn bản nếu không chọn gì) thành công thức. Chọn một công thức rồi bấm nút thì đổi ngược lại thành `$...$` |
+| Format Equations | Đổi mọi công thức trong vùng chọn (hoặc cả văn bản) về cùng một cỡ chữ |
 
 Tên nút và thông báo trong Word dùng tiếng Anh, vì hộp thông báo của Word hiển thị sai chữ tiếng Việt có dấu trên nhiều máy.
 
