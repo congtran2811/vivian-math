@@ -60,3 +60,13 @@ button.link { border: none; background: none; color: #dc2626; font-size: 12px; p
 .steps li { margin-bottom: 14px; color: #6b7280; font-size: 14px; }
 .step-math { margin-top: 6px; color: #111827; font-size: 17px; overflow-x: auto; }
 .plane-error { grid-column: 2 / -1; margin: 0; padding: 16px; background: #fef2f2; border: 1px solid #fecaca; border-radius: 8px; color: #b91c1c; }
+
+/* Chức năng kiểu MathType: phím tắt, yêu thích, gần đây */
+button.on { background: #eef2ff; border-color: #2b4eff; }
+.shortcuts { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px 16px; padding: 10px 12px; margin-bottom: 12px; background: #fff; border: 1px solid #d0d5dd; border-radius: 8px; font-size: 13px; color: #4b5563; }
+kbd { display: inline-block; min-width: 54px; padding: 1px 6px; border: 1px solid #d0d5dd; border-bottom-width: 2px; border-radius: 4px; background: #f9fafb; font-family: Consolas, monospace; font-size: 12px; color: #111827; text-align: center; }
+.palette .text-btn { grid-column: span 2; font-size: 13px; color: #2b4eff; }
+.palette .empty { grid-column: 1 / -1; margin: 6px; font-size: 13px; color: #6b7280; }
+.fav { display: flex; }
+.fav > button:first-child { flex: 1; border-radius: 6px 0 0 6px; }
+.fav .remove { min-width: 28px; border-left: none; border-radius: 0 6px 6px 0; color: #dc2626; font-size: 16px; }

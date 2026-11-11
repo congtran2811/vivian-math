@@ -154,6 +154,75 @@ export const GROUPS: PaletteGroup[] = [
     ]
   },
   {
+    name: 'Ma trận',
+    items: [
+      tpl(`\\begin{pmatrix}${B}&${B}\\\\${B}&${B}\\end{pmatrix}`, '\\begin{pmatrix}#?&#?\\\\#?&#?\\end{pmatrix}', 'Ma trận 2×2 ngoặc tròn'),
+      tpl(`\\begin{bmatrix}${B}&${B}\\\\${B}&${B}\\end{bmatrix}`, '\\begin{bmatrix}#?&#?\\\\#?&#?\\end{bmatrix}', 'Ma trận 2×2 ngoặc vuông'),
+      tpl(`\\begin{vmatrix}${B}&${B}\\\\${B}&${B}\\end{vmatrix}`, '\\begin{vmatrix}#?&#?\\\\#?&#?\\end{vmatrix}', 'Định thức 2×2'),
+      tpl(
+        `\\begin{pmatrix}${B}&${B}&${B}\\\\${B}&${B}&${B}\\\\${B}&${B}&${B}\\end{pmatrix}`,
+        '\\begin{pmatrix}#?&#?&#?\\\\#?&#?&#?\\\\#?&#?&#?\\end{pmatrix}',
+        'Ma trận 3×3'
+      ),
+      tpl(`\\begin{matrix}${B}&${B}\\\\${B}&${B}\\end{matrix}`, '\\begin{matrix}#?&#?\\\\#?&#?\\end{matrix}', 'Bảng 2×2 không ngoặc'),
+      tpl(`\\begin{pmatrix}${B}\\\\${B}\\end{pmatrix}`, '\\begin{pmatrix}#?\\\\#?\\end{pmatrix}', 'Cột 2 hàng'),
+      tpl(
+        `\\begin{aligned}${B}&=${B}\\\\&=${B}\\end{aligned}`,
+        '\\begin{aligned}#?&=#?\\\\&=#?\\end{aligned}',
+        'Biến đổi nhiều dòng, thẳng hàng dấu ='
+      ),
+      tpl(
+        `\\begin{aligned}${B}&\\Leftrightarrow ${B}\\\\&\\Leftrightarrow ${B}\\end{aligned}`,
+        '\\begin{aligned}#?&\\Leftrightarrow #?\\\\&\\Leftrightarrow #?\\end{aligned}',
+        'Biến đổi tương đương nhiều dòng'
+      )
+    ]
+  },
+  {
+    name: 'Dấu và kiểu chữ',
+    items: [
+      tpl(`\\hat{${B}}`, '\\hat{#@}', 'Dấu mũ'),
+      tpl(`\\bar{${B}}`, '\\bar{#@}', 'Gạch ngang trên'),
+      tpl(`\\vec{${B}}`, '\\vec{#@}', 'Mũi tên vectơ'),
+      tpl(`\\dot{${B}}`, '\\dot{#@}', 'Một chấm trên'),
+      tpl(`\\ddot{${B}}`, '\\ddot{#@}', 'Hai chấm trên'),
+      tpl(`\\tilde{${B}}`, '\\tilde{#@}', 'Dấu ngã'),
+      tpl(`${B}'`, "#@'", 'Dấu phẩy (phẩy trên)'),
+      tpl(`\\underline{${B}}`, '\\underline{#@}', 'Gạch dưới'),
+      tpl(`\\overbrace{${B}}^{${B}}`, '\\overbrace{#@}^{#?}', 'Ngoặc ôm phía trên'),
+      tpl(`\\underbrace{${B}}_{${B}}`, '\\underbrace{#@}_{#?}', 'Ngoặc ôm phía dưới'),
+      tpl(`\\boxed{${B}}`, '\\boxed{#@}', 'Đóng khung kết quả'),
+      tpl(`\\cancel{${B}}`, '\\cancel{#@}', 'Gạch bỏ (rút gọn)'),
+      tpl('\\text{abc}', '\\text{#?}', 'Chữ thường (lời văn)'),
+      tpl('\\mathbf{abc}', '\\mathbf{#@}', 'Chữ đậm'),
+      tpl('\\mathrm{abc}', '\\mathrm{#@}', 'Chữ đứng'),
+      tpl('\\mathbb{ABC}', '\\mathbb{#@}', 'Chữ rỗng (tập hợp số)'),
+      tpl('\\mathcal{ABC}', '\\mathcal{#@}', 'Chữ hoa viết tay')
+    ]
+  },
+  {
+    name: 'Hóa học',
+    wide: true,
+    items: [
+      sym('\\ce{H2O}', 'Nước'),
+      sym('\\ce{CO2}', 'Cacbon đioxit'),
+      sym('\\ce{H2SO4}', 'Axit sunfuric'),
+      sym('\\ce{NaOH}', 'Natri hiđroxit'),
+      sym('\\ce{Ca(OH)2}', 'Canxi hiđroxit'),
+      sym('\\ce{Fe^3+}', 'Ion dương'),
+      sym('\\ce{SO4^2-}', 'Ion âm'),
+      sym('\\ce{A + B -> C}', 'Phương trình phản ứng'),
+      sym('\\ce{A + B ->[t^o] C}', 'Phản ứng có nhiệt độ'),
+      sym('\\ce{A + B ->[t^o][xt] C}', 'Phản ứng có nhiệt độ và xúc tác'),
+      sym('\\ce{A + B <=> C}', 'Phản ứng thuận nghịch'),
+      sym('\\ce{2H2 + O2 ->[t^o] 2H2O}', 'Ví dụ: đốt hiđro'),
+      sym('\\ce{Zn + 2HCl -> ZnCl2 + H2 ^}', 'Chất khí bay lên'),
+      sym('\\ce{BaCl2 + H2SO4 -> BaSO4 v + 2HCl}', 'Chất kết tủa'),
+      sym('\\ce{CaCO3 ->[t^o] CaO + CO2 ^}', 'Ví dụ: nung đá vôi'),
+      sym('\\ce{^{12}_{6}C}', 'Kí hiệu nguyên tử')
+    ]
+  },
+  {
     name: 'Công thức THCS',
     wide: true,
     items: [
