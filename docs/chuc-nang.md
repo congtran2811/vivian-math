@@ -9,12 +9,14 @@ Nền tảng: Windows trước, sau đó macOS (cùng một mã nguồn Electron
 - [x] Bảng mẫu nhanh: phân số, căn, lũy thừa, hệ phương trình, góc, tam giác
 - [x] Sửa trực tiếp bằng LaTeX
 - [x] Sao chép LaTeX và MathML (dán vào Word)
-- [ ] Bảng ký hiệu đầy đủ theo nhóm như MathType (đại số, hình học, tập hợp, chữ Hy Lạp, mũi tên)
-- [ ] Mẫu theo chương trình THCS: tỉ lệ thức, hằng đẳng thức, căn bậc ba, hệ thức lượng, tỉ số lượng giác, định lý Pythagore, Thalès, Viète
-- [ ] Lưu và mở file, danh sách công thức gần đây
-- [ ] Xuất ảnh PNG, SVG (nền trong suốt, chọn cỡ chữ và màu)
-- [ ] Sao chép dạng ảnh để dán vào Word, PowerPoint, Zalo
-- [ ] Hoàn tác, làm lại, phím tắt giống MathType
+- [x] Bảng ký hiệu đầy đủ theo nhóm như MathType (đại số, hình học, tập hợp, chữ Hy Lạp, mũi tên)
+- [x] Mẫu theo chương trình THCS: tỉ lệ thức, hằng đẳng thức, căn bậc ba, hệ thức lượng, tỉ số lượng giác, định lý Pythagore, Thalès, Viète
+- [x] Lưu và mở file (.vmath)
+- [ ] Danh sách công thức gần đây
+- [x] Xuất ảnh PNG, SVG (nền trong suốt, chọn cỡ chữ và màu)
+- [x] Sao chép dạng ảnh để dán vào Word, PowerPoint, Zalo
+- [x] Hoàn tác, làm lại, phím tắt Ctrl+N, Ctrl+O, Ctrl+S
+- [ ] Phím tắt chèn ký hiệu giống MathType
 - [ ] Căn chỉnh nhiều dòng, ma trận, bảng
 - [ ] Giao diện tiếng Việt và tiếng Anh
 

@@ -2,6 +2,7 @@ import React from 'react'
 import { createRoot } from 'react-dom/client'
 import { MathfieldElement } from 'mathlive'
 import 'mathlive/fonts.css'
+import 'mathlive/static.css'
 import App from './App'
 import './styles.css'
 

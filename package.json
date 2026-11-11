@@ -14,11 +14,18 @@
   "build": {
     "appId": "com.vivianmath.app",
     "productName": "Vivian Math",
-    "files": ["out/**/*"],
-    "win": { "target": "nsis" },
-    "mac": { "target": "dmg" }
+    "files": [
+      "out/**/*"
+    ],
+    "win": {
+      "target": "nsis"
+    },
+    "mac": {
+      "target": "dmg"
+    }
   },
   "dependencies": {
+    "mathjax-full": "^3.2.1",
     "mathlive": "^0.105.0",
     "react": "^18.3.1",
     "react-dom": "^18.3.1"
