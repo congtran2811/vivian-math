@@ -66,8 +66,18 @@ export function latexToSvg(latex: string, opts: ExportOptions): SvgResult {
   return { svg: `<?xml version="1.0" encoding="UTF-8"?>\n${svg}`, width, height, depth }
 }
 
-/** Vẽ SVG lên canvas để lấy ảnh PNG nền trong suốt. scale = 2 cho ảnh nét khi in. */
-export async function latexToPng(latex: string, opts: ExportOptions, scale = 2): Promise<Blob> {
+export interface ImageOptions {
+  /** Hệ số phóng: 2 cho ảnh nét khi in, 4 cho in khổ lớn. */
+  scale?: number
+  /** Màu nền; bỏ trống là nền trong suốt. JPG luôn cần màu nền. */
+  background?: string
+  type?: 'image/png' | 'image/jpeg'
+}
+
+/** Vẽ SVG lên canvas để lấy ảnh PNG (mặc định nền trong suốt) hoặc JPG. */
+export async function latexToPng(latex: string, opts: ExportOptions, image: ImageOptions | number = {}): Promise<Blob> {
+  const { scale = 2, background, type = 'image/png' } = typeof image === 'number' ? { scale: image } : image
+  const fill = background ?? (type === 'image/jpeg' ? '#ffffff' : undefined)
   const { svg, width, height } = latexToSvg(latex, opts)
   const img = new Image()
   img.src = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg)
@@ -76,8 +86,12 @@ export async function latexToPng(latex: string, opts: ExportOptions, scale = 2):
   canvas.width = width * scale
   canvas.height = height * scale
   const ctx = canvas.getContext('2d')!
+  if (fill) {
+    ctx.fillStyle = fill
+    ctx.fillRect(0, 0, canvas.width, canvas.height)
+  }
   ctx.drawImage(img, 0, 0, canvas.width, canvas.height)
   return new Promise((resolve, reject) =>
-    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Không tạo được ảnh PNG.'))), 'image/png')
+    canvas.toBlob((b) => (b ? resolve(b) : reject(new Error('Không tạo được ảnh.'))), type, 0.95)
   )
 }

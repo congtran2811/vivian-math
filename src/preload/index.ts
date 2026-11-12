@@ -10,6 +10,11 @@ contextBridge.exposeInMainWorld('vivian', {
   onWordSession: (cb: (session: unknown) => void) => {
     ipcRenderer.on('word:session', (_event, session) => cb(session))
   },
+  wordBatch: () => ipcRenderer.invoke('word:batch'),
+  wordBatchFinish: (args: unknown) => ipcRenderer.invoke('word:batchFinish', args),
+  onWordBatch: (cb: () => void) => {
+    ipcRenderer.on('word:batch', () => cb())
+  },
   wordCancel: () => ipcRenderer.invoke('word:cancel'),
   installWordAddin: () => ipcRenderer.invoke('word:installAddin')
 })

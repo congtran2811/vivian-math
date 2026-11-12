@@ -14,6 +14,18 @@ const sessionFromArgs = (argv: string[]): string | null => {
 }
 // Thư mục trao đổi của công thức đang soạn cho Word; null khi không có.
 let wordDir: string | null = sessionFromArgs(process.argv)
+
+// Word cũng có thể nhờ dựng nhiều công thức một lượt mà không cần người dùng thao tác:
+// khi đó thư mục trao đổi có batch.txt, mỗi dòng là "cỡ chữ<TAB>LaTeX".
+// Phần mềm ghi r1.png, r2.png..., sizes.txt (mỗi dòng "số thứ tự;rộng;cao;độ sâu", 0 nếu lỗi) rồi done.flag.
+const isBatch = (dir: string | null): dir is string => !!dir && existsSync(join(dir, 'batch.txt'))
+const pendingBatches: string[] = []
+// Phần mềm được mở chỉ để dựng hàng loạt: cửa sổ ẩn, xong việc thì thoát.
+const startedForBatch = isBatch(wordDir)
+if (isBatch(wordDir)) {
+  pendingBatches.push(wordDir)
+  wordDir = null
+}
 let mainWindow: BrowserWindow | null = null
 
 const windowTitle = (): string => (wordDir ? 'Vivian Math (Word)' : 'Vivian Math')
@@ -44,10 +56,13 @@ function createWindow(): void {
     height: 720,
     title: windowTitle(),
     backgroundColor: '#f4f6fb',
+    show: !startedForBatch,
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       contextIsolation: true,
-      nodeIntegration: false
+      nodeIntegration: false,
+      // Cửa sổ ẩn hoặc thu nhỏ vẫn phải dựng công thức cho Word kịp thời.
+      backgroundThrottling: false
     }
   })
 
@@ -161,6 +176,46 @@ function registerWordHandlers(): void {
     }
   )
 
+  // Giao diện lấy lô công thức đang chờ dựng (nếu có).
+  ipcMain.handle('word:batch', async (): Promise<{ dir: string; items: { fontSize: number; latex: string }[] } | null> => {
+    const dir = pendingBatches[0]
+    if (!dir) return null
+    const items = (await readText(join(dir, 'batch.txt')))
+      .split(/\r?\n/)
+      .filter((line) => line.includes('\t'))
+      .map((line) => {
+        const tab = line.indexOf('\t')
+        const size = parseFloat(line.slice(0, tab))
+        return { fontSize: size >= 6 && size <= 96 ? size : 12, latex: line.slice(tab + 1).trim() }
+      })
+    return { dir, items }
+  })
+
+  ipcMain.handle(
+    'word:batchFinish',
+    async (
+      _event,
+      a: { dir: string; results: ({ png: Uint8Array; width: number; height: number; depth: number } | null)[] }
+    ): Promise<void> => {
+      // Chỉ ghi vào thư mục mà Word đã yêu cầu.
+      const at = pendingBatches.indexOf(a.dir)
+      if (at < 0) return
+      const lines: string[] = []
+      for (const [i, r] of a.results.entries()) {
+        if (r) await writeFile(join(a.dir, `r${i + 1}.png`), r.png)
+        lines.push([i + 1, ...(r ? [r.width, r.height, r.depth] : [0, 0, 0]).map((n) => n.toFixed(2))].join(';'))
+      }
+      await writeFile(join(a.dir, 'sizes.txt'), lines.join('\n'))
+      await writeFile(join(a.dir, 'done.flag'), '')
+      pendingBatches.splice(at, 1)
+      if (pendingBatches.length > 0) {
+        mainWindow?.webContents.send('word:batch')
+      } else if (startedForBatch && !wordDir && mainWindow && !mainWindow.isVisible()) {
+        app.quit()
+      }
+    }
+  )
+
   ipcMain.handle('word:cancel', async (): Promise<void> => {
     cancelWordSession()
     await endWordSession()
@@ -183,17 +238,35 @@ function registerWordHandlers(): void {
 }
 
 // Nếu người dùng đóng cửa sổ mà không chèn, báo cho Word biết để nó thôi chờ.
-app.on('will-quit', cancelWordSession)
+app.on('will-quit', () => {
+  cancelWordSession()
+  for (const dir of pendingBatches) {
+    try {
+      writeFileSync(join(dir, 'cancel.flag'), '')
+    } catch {
+      // Thư mục đã bị xóa.
+    }
+  }
+})
 
 // Chỉ chạy một phần mềm: lần mở sau (ví dụ Word bấm nút lần nữa) chuyển yêu cầu cho cửa sổ đang mở rồi thoát.
 const isFirstInstance = app.requestSingleInstanceLock()
 if (!isFirstInstance) {
+  // Bản mở sau chỉ chuyển yêu cầu rồi thoát: không được báo hủy thay cho bản đang chạy.
   wordDir = null
+  pendingBatches.length = 0
   app.quit()
 }
 
 app.on('second-instance', (_event, argv) => {
   const next = sessionFromArgs(argv)
+  if (isBatch(next)) {
+    // Dựng hàng loạt chạy ngầm trong cửa sổ đang mở, không giành tiêu điểm.
+    if (!pendingBatches.includes(next)) pendingBatches.push(next)
+    if (!mainWindow) createWindow()
+    else if (pendingBatches.length === 1 && !mainWindow.webContents.isLoading()) mainWindow.webContents.send('word:batch')
+    return
+  }
   if (next && next !== wordDir) {
     cancelWordSession()
     wordDir = next
